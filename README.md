@@ -44,7 +44,7 @@ An open-source AI-powered mobile app designed to combat chronic diseases (e.g., 
 | Momota Ahsana Meem | Backend Developer |
 | Khan MD Shams Arefin | Backend Developer|
 | Sheikh Redwanul Islam | Documentation & QA Lead |
-| Sajid Ahamed | AI/ML Developer | (Team Lead)
+| Sajid Ahamed | AI/ML Developer | Team Lead
 
 ## 📅 Timeline
 
