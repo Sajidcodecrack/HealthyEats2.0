@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { Schema, model } = mongoose;
@@ -26,6 +27,7 @@ const UserSchema = new Schema({
   bmi:              { type: Number },
   activityLevel:    { type: String, enum: activityLevels },
   budget:           { type: Number },
+  profilePhoto:     { type: String }, //  New field for profile photo URL/path 
   medicalConditions:[{ type: Schema.Types.ObjectId, ref: 'MedicalCondition' }],
 }, { timestamps: true });
 

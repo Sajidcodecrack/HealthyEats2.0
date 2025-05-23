@@ -1,0 +1,13 @@
+{
+  "userId": "6830ca7cbae71a3c2cce3f67",
+  "name": "Ahmed Rahman",
+  "age": 27,
+  "gender": "male",
+  "heightFeet": 5,
+  "heightInches": 8,
+  "weight": 45,
+  "activityLevel": "moderate",
+  "budget": 4000,
+  "profilePhoto": "https://cdn.example.com/profiles/ahmed.jpg"
+}
+// http://localhost:3000/api/user/profile (GET)
