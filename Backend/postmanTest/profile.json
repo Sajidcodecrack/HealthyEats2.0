@@ -10,4 +10,4 @@
   "budget": 4000,
   "profilePhoto": "https://cdn.example.com/profiles/ahmed.jpg"
 }
-// http://localhost:3000/api/user/profile (GET)
+// http://localhost:3000/api/user/profile (PUT)
