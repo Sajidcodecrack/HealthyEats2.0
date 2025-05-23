@@ -1,0 +1,23 @@
+
+// http://localhost:3000/api/condition (POST)
+{
+  "name": "Hypertension",
+  "description": "High blood pressure.",
+  "severityLevel": "moderate",
+  "dietaryRestrictions": ["Low sodium"],
+  "fitnessAdvice": "Regular aerobic exercise",
+  "riskLevel": 2,
+  "recommendedCalorieRange": { "min": 1800, "max": 2200 }
+}
+// Get all medical conditions
+// http://localhost:3000/api/condition (GET)
+// No-Body needed 
+// Update medical condition
+// http://localhost:3000/api/condition/<CONDITION_ID> (put)
+// http://localhost:3000/api/condition/remove (POST)
+{
+  "userId": "USER_ID",
+  "conditionId": "CONDITION_ID"
+}
+
+

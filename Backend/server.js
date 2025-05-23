@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const medicalConditionRoutes = require('./routes/medicalConditionRoutes');
 
 
 const app = express();
@@ -17,6 +18,7 @@ app.get('/', (req, res) => {
 // mount auth
 app.use('/api', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/condition', medicalConditionRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
