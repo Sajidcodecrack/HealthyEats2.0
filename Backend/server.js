@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const medicalConditionRoutes = require('./routes/medicalConditionRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
 
 
 const app = express();
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/condition', medicalConditionRoutes);
+app.use('/api/reminder', reminderRoutes);
 
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
