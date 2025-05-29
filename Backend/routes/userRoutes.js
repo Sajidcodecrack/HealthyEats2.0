@@ -1,9 +1,14 @@
-// routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
-const { getProfile, updateProfile } = require('../controllers/userController');
+const userController = require('../controllers/user.controller');
 
-router.get('/profile', getProfile);      // GET /api/user/profile?userId=...
-router.put('/profile', updateProfile);   // PUT /api/user/profile
+// Registration
+router.post('/register', userController.register);
+
+// Login
+router.post('/login', userController.login);
+
+// Get user by ID (protected, needs auth middleware)
+router.get('/:id', userController.getUser);
 
 module.exports = router;
