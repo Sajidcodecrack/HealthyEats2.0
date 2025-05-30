@@ -3,14 +3,21 @@ const UserProfile = require('../models/UserProfile');
 // Create profile (onboarding)
 exports.createUserProfile = async (req, res) => {
   try {
-    const { age, gender, height, heightUnit, weight, weightUnit } = req.body;
+    const { age, gender, heightFeet, heightInches, weight } = req.body;
     const userId = req.user.userId; // Set by auth middleware (from JWT)
 
     // Prevent duplicate profile
     const exists = await UserProfile.findOne({ userId });
     if (exists) return res.status(400).json({ msg: 'Profile already exists.' });
 
-    const newProfile = new UserProfile({ userId, age, gender, height, heightUnit, weight, weightUnit });
+    const newProfile = new UserProfile({
+      userId,
+      age,
+      gender,
+      heightFeet,
+      heightInches,
+      weight
+    });
     await newProfile.save();
     res.status(201).json(newProfile);
   } catch (err) {
@@ -35,9 +42,11 @@ exports.updateUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
+    // Only allow updating allowed fields
+    const allowedUpdates = (({ age, gender, heightFeet, heightInches, weight }) => ({ age, gender, heightFeet, heightInches, weight }))(updates);
     const updatedProfile = await UserProfile.findOneAndUpdate(
       { userId },
-      { ...updates, updatedAt: new Date() },
+      { ...allowedUpdates, updatedAt: new Date() },
       { new: true }
     );
     if (!updatedProfile) return res.status(404).json({ msg: 'Profile not found.' });
