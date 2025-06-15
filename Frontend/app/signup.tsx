@@ -84,12 +84,32 @@ const Signup: React.FC = () => {
     }
 
     try {
-      await AsyncStorage.setItem("hasCompletedOnboarding", "true");
-      router.replace({ pathname: "/home" });
-    } catch (error) {
-      console.error("Error during signup:", error);
-      setError("An error occurred during signup. Please try again.");
-    }
+  const response = await fetch("http://192.168.31.83:3000/api/user/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: fullName,
+      email: email,
+      password: password,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (response.ok) {
+    // You can save token/data if needed
+    await AsyncStorage.setItem("hasCompletedOnboarding", "true");
+    router.replace({ pathname: "/home" });
+  } else {
+    setError(data?.message || "Registration failed.");
+  }
+} catch (error) {
+  console.error("Error during signup:", error);
+  setError("An error occurred. Please check your connection and try again.");
+}
+
   };
 
   // Original mobile layout (unchanged)
