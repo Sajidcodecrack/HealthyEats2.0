@@ -14,7 +14,7 @@ import { Checkbox } from "../~/components/ui/checkbox"; // Assuming this is your
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "../~/components/ui/input";
-
+import Constants from 'expo-constants'; // Import expo-constants
 
 const Signup: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
@@ -24,9 +24,11 @@ const Signup: React.FC = () => {
   const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true); // This state will control the checkbox
   const [error, setError] = useState<string>("");
   const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  
+  const [loading, setLoading] = useState(false); // To show loading state
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
-
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
   useEffect(() => {
     if (!isWeb) {
       const keyboardDidShowListener = Keyboard.addListener(
@@ -46,70 +48,88 @@ const Signup: React.FC = () => {
   }, [isWeb]);
 
   const handleSignup = async (): Promise<void> => {
+    // Dismiss keyboard on non-web platforms
     if (!isWeb) {
       Keyboard.dismiss();
     }
-    setError("");
+    setError(''); // Clear previous errors
+    setLoading(true); // Set loading to true
 
+    // Client-side validation
     if (!fullName.trim()) {
-      setError("Please enter your full name");
+      setError('Please enter your full name');
+      setLoading(false);
       return;
     }
     if (!email.trim()) {
-      setError("Please enter your email");
+      setError('Please enter your email');
+      setLoading(false);
       return;
     }
     if (!password) {
-      setError("Please enter a password");
+      setError('Please enter a password');
+      setLoading(false);
       return;
     }
     if (!confirmPassword) {
-      setError("Please confirm your password");
+      setError('Please confirm your password');
+      setLoading(false);
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
+      setLoading(false);
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
       return;
     }
 
-    // Email validation
+    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+      setError('Please enter a valid email address');
+      setLoading(false);
       return;
     }
 
     try {
-  const response = await fetch("http://192.168.31.83:3000/api/user/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: fullName,
-      email: email,
-      password: password,
-    }),
-  });
+      // It's highly recommended to use an environment variable for your API URL
+      // For local development, this hardcoded IP is common.
 
-  const data = await response.json();
+      const response = await fetch(`${API_URL}/api/user/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: fullName,
+          email: email,
+          password: password,
+        }),
+      });
 
-  if (response.ok) {
-    // You can save token/data if needed
-    await AsyncStorage.setItem("hasCompletedOnboarding", "true");
-    router.replace({ pathname: "/home" });
-  } else {
-    setError(data?.message || "Registration failed.");
-  }
-} catch (error) {
-  console.error("Error during signup:", error);
-  setError("An error occurred. Please check your connection and try again.");
-}
+      const data = await response.json();
 
+      if (response.ok) {
+        // Backend returns msg: 'Registration successful!' on success (status 201)
+        // If your backend for registration returns a token, you would save it here.
+        // As per your provided backend, it only returns a message for registration.
+        await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+        // Navigate to home or a login screen after successful registration
+        router.replace({ pathname: '/home' });
+      } else {
+        // Backend returns msg for errors (e.g., 'Email already registered.')
+        setError(data?.msg || 'Registration failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during signup:', error);
+      setError('An unexpected error occurred. Please check your connection and try again.');
+    } finally {
+      setLoading(false); // Always set loading to false after the operation
+    }
   };
 
   // Original mobile layout (unchanged)

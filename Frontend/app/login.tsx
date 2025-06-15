@@ -14,6 +14,11 @@ import { Checkbox } from "../~/components/ui/checkbox";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "../~/components/ui/input";
+import Constants from 'expo-constants'; // Import expo-constants
+
+
+const isWeb = Platform.OS === 'web';
+
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -21,6 +26,10 @@ const Login: React.FC = () => {
   const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false); // To show loading state
+
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
+
   const router = useRouter();
 
   useEffect(() => {
@@ -40,30 +49,74 @@ const Login: React.FC = () => {
   }, []);
 
   const handleLogin = async (): Promise<void> => {
-    Keyboard.dismiss();
-    setError("");
+    // Dismiss keyboard on non-web platforms
+    if (!isWeb) {
+      Keyboard.dismiss();
+    }
+    setError(''); // Clear previous errors
+    setLoading(true); // Set loading to true
 
+    // Client-side validation
     if (!email.trim()) {
-      setError("Please enter your email");
+      setError('Please enter your email');
+      setLoading(false);
       return;
     }
     if (!password) {
-      setError("Please enter your password");
+      setError('Please enter your password');
+      setLoading(false);
       return;
     }
 
+    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Check if API_URL is configured
+    if (!API_URL) {
+      setError('API URL is not configured. Please check your app.json/app.config.js.');
+      setLoading(false);
       return;
     }
 
     try {
-      await AsyncStorage.setItem("hasCompletedOnboarding", "true");
-      router.replace({ pathname: "/home" });
+      const response = await fetch(`${API_URL}/api/user/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Your backend for login returns a token and user data on success
+        // Save the token and any other relevant user data
+        if (data.token) {
+          await AsyncStorage.setItem('userToken', data.token);
+          // You might also want to save user details like ID, name, email
+          await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+        }
+
+        await AsyncStorage.setItem("hasCompletedOnboarding", "true"); // Assuming this is for initial setup completion
+        router.replace({ pathname: "/home" });
+      } else {
+        // Backend returns msg for errors (e.g., 'Invalid email or password.')
+        setError(data?.msg || 'Login failed. Please try again.');
+      }
     } catch (error) {
       console.error("Error during login:", error);
-      setError("An error occurred during login. Please try again.");
+      setError("An unexpected error occurred during login. Please check your connection and try again.");
+    } finally {
+      setLoading(false); // Always set loading to false after the operation
     }
   };
 
