@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 // Only include your currently existing routes
 const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfile.routes');
+const foodAIRoutes = require('./routes/foodAI');
+const foodPreferencesRoutes = require('./routes/foodPreferences')
 // const reminderRoutes = require('./routes/reminderRoutes');
 // Add more as you implement them
 
@@ -22,6 +24,8 @@ app.get('/', (req, res) => {
 // Mount actual, existing routes only
 app.use('/api/user', userRoutes);
 app.use('/api/user-profile', userProfileRoutes);
+app.use('/api/foodAI', foodAIRoutes);
+app.use('/api/foodPreferences', foodPreferencesRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
