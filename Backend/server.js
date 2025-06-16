@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 // Only include your currently existing routes
 const userRoutes = require('./routes/userRoutes');
-const userProfileRoutes = require('./routes/userProfile.routes');
+const userProfileRoutes = require('./routes/userProfileroutes');
 const foodAIRoutes = require('./routes/foodAI');
 const foodPreferencesRoutes = require('./routes/foodPreferences')
 // const reminderRoutes = require('./routes/reminderRoutes');

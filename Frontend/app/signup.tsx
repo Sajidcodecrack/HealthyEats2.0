@@ -8,27 +8,30 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  ActivityIndicator, // Import ActivityIndicator for loading state
 } from "react-native";
 import { Checkbox } from "../~/components/ui/checkbox"; // Assuming this is your reusable Checkbox
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "../~/components/ui/input";
-import Constants from 'expo-constants'; // Import expo-constants
-
+import Constants from 'expo-constants';
+import { saveToken } from "../lib/tokenManager"; // Ensure this path is correct
+import { LinearGradient } from "expo-linear-gradient";
 const Signup: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true); // This state will control the checkbox
+  const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
-  
+
   const [loading, setLoading] = useState(false); // To show loading state
   const router = useRouter();
   const isWeb = Platform.OS === 'web';
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
+
   useEffect(() => {
     if (!isWeb) {
       const keyboardDidShowListener = Keyboard.addListener(
@@ -95,10 +98,13 @@ const Signup: React.FC = () => {
       return;
     }
 
-    try {
-      // It's highly recommended to use an environment variable for your API URL
-      // For local development, this hardcoded IP is common.
+    if (!API_URL) {
+      setError('API URL is not configured. Please check your app.json/app.config.js.');
+      setLoading(false);
+      return;
+    }
 
+    try {
       const response = await fetch(`${API_URL}/api/user/register`, {
         method: 'POST',
         headers: {
@@ -114,12 +120,30 @@ const Signup: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Backend returns msg: 'Registration successful!' on success (status 201)
-        // If your backend for registration returns a token, you would save it here.
-        // As per your provided backend, it only returns a message for registration.
-        await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
-        // Navigate to home or a login screen after successful registration
-        router.replace({ pathname: '/home' });
+        // If registration is successful, assume backend returns token and userId
+        if (data.token) {
+          await saveToken(data.token); // Save the received token
+        } else {
+          // Handle case where token is not returned (e.g., backend only confirms registration)
+          // You might want to automatically log the user in here if your backend has a /login endpoint
+          console.warn('Registration successful but no token received. User might need to log in manually.');
+          // Potentially redirect to login screen instead of onboardingquestions
+          // router.replace({ pathname: '/signin' });
+          // return;
+        }
+
+        if (data.userId) {
+          await AsyncStorage.setItem('userId', data.userId); // Save the user ID
+        } else {
+            console.warn('No userId received during registration.');
+        }
+
+        // IMPORTANT: Do NOT set 'hasCompletedOnboarding' to 'true' here.
+        // That flag should only be set AFTER the user completes the onboarding questions.
+        // The _layout.tsx will correctly redirect to onboardingquestions
+        // because 'hasCompletedOnboarding' will be null or 'false'.
+
+        router.replace({ pathname: '/onboardingquestions' }); // Navigate to onboarding questions
       } else {
         // Backend returns msg for errors (e.g., 'Email already registered.')
         setError(data?.msg || 'Registration failed. Please try again.');
@@ -132,7 +156,6 @@ const Signup: React.FC = () => {
     }
   };
 
-  // Original mobile layout (unchanged)
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -150,19 +173,26 @@ const Signup: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Header Section */}
-          <View
-            className={`items-center bg-primary  ${
-              keyboardVisible ? "pt-4 pb-4" : "pt-16 pb-8"
-            }`}
+          <LinearGradient
+            colors={["#934925", "#F97C3E"]}
+            style={{
+              alignItems: "center",
+              paddingTop: keyboardVisible ? 16 : 32,
+              paddingBottom: keyboardVisible ? 16 : 48,
+              paddingHorizontal: 24,
+              flexDirection: "column",
+              justifyContent: "center",
+              flex: 1,
+            }}
           >
             {!keyboardVisible && (
               <Image
-                source={require("../assets/images/icon.png")}
-                style={{ width: 120, height: 120 }}
+                source={require("../assets/images/IconTransparent.png")}
+                style={{ width: 130, height: 130 }}
                 resizeMode="contain"
               />
             )}
-          </View>
+          </LinearGradient>
           <View className="h-8 bg-background dark:bg-dark-background fixed bottom-7 rounded-t-[32px]"></View>
           {/* Form Container */}
           <View className="flex-1 px-6 -mt-5 bg-background dark:bg-dark-background rounded-t-[32px]">
@@ -180,14 +210,14 @@ const Signup: React.FC = () => {
 
             <View className="space-y-2">
               <View>
-                <Text className="text-black dark:text-white  text-sm font-medium mb-1 ml-1">
+                <Text className="text-black dark:text-white text-sm font-medium mb-1 ml-1">
                   Full Name
                 </Text>
                 <Input
                   placeholder="Enter your full name"
                   value={fullName}
                   onChangeText={setFullName}
-                  className="px-6 py-4 mb-4 border border-gray-400  rounded-full text-black dark:text-white bg-transparent focus:border-primary"
+                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
                   autoCapitalize="none"
                   textContentType="name"
                   returnKeyType="next"
@@ -207,7 +237,7 @@ const Signup: React.FC = () => {
                   textContentType="emailAddress"
                   autoComplete="off"
                   returnKeyType="next"
-                  className="px-6 py-4 mb-4 border border-gray-400  rounded-full text-black dark:text-white bg-transparent focus:border-primary"
+                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
                 />
               </View>
 
@@ -223,7 +253,7 @@ const Signup: React.FC = () => {
                   textContentType="newPassword"
                   autoComplete="off"
                   returnKeyType="next"
-                  className="px-6 py-4 mb-4 border border-gray-400  rounded-full text-black dark:text-white bg-transparent focus:border-primary"
+                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
                 />
               </View>
 
@@ -240,7 +270,7 @@ const Signup: React.FC = () => {
                   autoComplete="off"
                   returnKeyType="done"
                   onSubmitEditing={handleSignup}
-                  className="px-6 py-4 mb-2 border border-gray-400  rounded-full text-black dark:text-white bg-transparent focus:border-primary"
+                  className="px-6 py-4 mb-2 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
                 />
               </View>
             </View>
@@ -252,9 +282,9 @@ const Signup: React.FC = () => {
               activeOpacity={1}
             >
               <Checkbox
-                checked={keepSignedIn} // Use keepSignedIn for the checked prop
-                onCheckedChange={setKeepSignedIn} // Pass setKeepSignedIn to update the state
-                className="h-5 w-5" // Adjust size for mobile
+                checked={keepSignedIn}
+                onCheckedChange={setKeepSignedIn}
+                className="h-5 w-5"
               />
               <Text className="text-black dark:text-white ml-2 text-base">
                 Keep me signed in
@@ -275,16 +305,21 @@ const Signup: React.FC = () => {
                   elevation: 4,
                 } as const
               }
+              disabled={loading} // Disable button when loading
             >
-              <Text className="text-white text-base font-bold">
-                Create Account
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" /> // Show spinner when loading
+              ) : (
+                <Text className="text-white text-base font-bold">
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Sign In Link - Only show when keyboard is not visible */}
             {!keyboardVisible && (
               <TouchableOpacity
-                onPress={() => router.push("/login")}
+                onPress={() => router.push("/login")} // Ensure this points to your signin path
                 className="py-4"
                 activeOpacity={0.7}
               >

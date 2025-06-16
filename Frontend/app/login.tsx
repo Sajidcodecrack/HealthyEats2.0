@@ -14,11 +14,11 @@ import { Checkbox } from "../~/components/ui/checkbox";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "../~/components/ui/input";
-import Constants from 'expo-constants'; // Import expo-constants
+import Constants from "expo-constants"; // Import expo-constants
+import { saveToken } from "../lib/tokenManager";
 
-
-const isWeb = Platform.OS === 'web';
-
+import { LinearGradient } from "expo-linear-gradient";
+const isWeb = Platform.OS === "web";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -53,17 +53,17 @@ const Login: React.FC = () => {
     if (!isWeb) {
       Keyboard.dismiss();
     }
-    setError(''); // Clear previous errors
+    setError(""); // Clear previous errors
     setLoading(true); // Set loading to true
 
     // Client-side validation
     if (!email.trim()) {
-      setError('Please enter your email');
+      setError("Please enter your email");
       setLoading(false);
       return;
     }
     if (!password) {
-      setError('Please enter your password');
+      setError("Please enter your password");
       setLoading(false);
       return;
     }
@@ -71,52 +71,58 @@ const Login: React.FC = () => {
     // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       setLoading(false);
       return;
     }
 
     // Check if API_URL is configured
     if (!API_URL) {
-      setError('API URL is not configured. Please check your app.json/app.config.js.');
+      setError(
+        "API URL is not configured. Please check your app.json/app.config.js."
+      );
       setLoading(false);
       return;
     }
+    setLoading(true);
 
     try {
       const response = await fetch(`${API_URL}/api/user/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        // Your backend for login returns a token and user data on success
-        // Save the token and any other relevant user data
-        if (data.token) {
-          await AsyncStorage.setItem('userToken', data.token);
-          // You might also want to save user details like ID, name, email
-          await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-        }
+      if (response.ok && data.token && data.user) {
+        // --- KEY CHANGES ---
+        // 🔐 1. Save the token securely
+        await saveToken(data.token);
 
-        await AsyncStorage.setItem("hasCompletedOnboarding", "true"); // Assuming this is for initial setup completion
-        router.replace({ pathname: "/home" });
+        // 💾 2. Save the non-sensitive user ID for easy access later
+        await AsyncStorage.setItem("userId", data.user.id); // Assuming the user object has an 'id'
+
+        // You can decide if you still need to store other 'userData'
+        // await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+        // Check if user has completed onboarding before
+        const hasCompletedOnboarding = await AsyncStorage.getItem(
+          "hasCompletedOnboarding"
+        );
+        if (hasCompletedOnboarding === "true") {
+          router.replace({ pathname: "/" }); // Go to home if already onboarded
+        }
       } else {
-        // Backend returns msg for errors (e.g., 'Invalid email or password.')
-        setError(data?.msg || 'Login failed. Please try again.');
+        setError(data?.msg || "Login failed. Please try again.");
       }
     } catch (error) {
       console.error("Error during login:", error);
-      setError("An unexpected error occurred during login. Please check your connection and try again.");
+      setError("An unexpected error occurred. Please check your connection.");
     } finally {
-      setLoading(false); // Always set loading to false after the operation
+      setLoading(false);
     }
   };
 
@@ -137,19 +143,24 @@ const Login: React.FC = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Header Section */}
-          <View
-            className={`items-center bg-primary  ${
-              keyboardVisible ? "pt-4 pb-4" : "pt-16 pb-8"
-            }`}
+          <LinearGradient
+            colors={["#934925", "#F97C3E"]}
+            style={{
+              alignItems: "center",
+              paddingHorizontal: 24,
+              flexDirection: "column",
+              justifyContent: "center",
+              flex: 1,
+            }}
           >
             {!keyboardVisible && (
               <Image
-                source={require("../assets/images/icon.png")}
+                source={require("../assets/images/IconTransparent.png")}
                 style={{ width: 120, height: 120 }}
                 resizeMode="contain"
               />
             )}
-          </View>
+          </LinearGradient>
           <View className="h-8 bg-background dark:bg-dark-background fixed bottom-7 rounded-t-[32px]"></View>
 
           {/* Form Container */}

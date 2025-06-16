@@ -1,51 +1,68 @@
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter, SplashScreen } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
 import { PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getToken } from '../lib/tokenManager';
+import { View } from 'react-native';
 
-export default function Layout() {
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
   const router = useRouter();
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
+  const [appIsReady, setAppIsReady] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Check if onboarding has been completed using AsyncStorage
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    async function prepareApp() {
       try {
-        const value = await AsyncStorage.getItem('hasCompletedOnboarding');
-        if (value !== null) {
-          setHasCompletedOnboarding(value === 'true');
-        } else {
-          setHasCompletedOnboarding(false); // Default to false if not set
-        }
-      } catch (error) {
-        console.error('Error reading onboarding status:', error);
-        setHasCompletedOnboarding(false); // Fallback to false on error
-      }
-    };
+        const token = await getToken();
+        setIsAuthenticated(!!token);
 
-    checkOnboardingStatus();
+        const completed = await AsyncStorage.getItem('hasCompletedOnboarding');
+        setOnboardingCompleted(completed === 'true');
+      } catch (e) {
+        console.error('Failed to prepare app initial state:', e);
+        setIsAuthenticated(false);
+        setOnboardingCompleted(false);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    prepareApp();
   }, []);
 
-  // Redirect to onboarding if not completed
-  useEffect(() => {
-    if (hasCompletedOnboarding === null) return; // Wait until the check is complete
-    if (!hasCompletedOnboarding) {
-      router.replace('/onboarding');
-    } else {
-      router.replace('/signup'); // Or redirect to another route like '/home'
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+
+      if (isAuthenticated === false) {
+        router.replace('/signup');
+      } else if (isAuthenticated === true) {
+        if (onboardingCompleted === false) {
+          router.replace('/onboardingquestions');
+        } else if (onboardingCompleted === true) {
+          router.replace('/(tabs)');
+        }
+      }
     }
-  }, [hasCompletedOnboarding, router]);
+  }, [appIsReady, isAuthenticated, onboardingCompleted]);
+
+  if (!appIsReady) return null;
 
   return (
-    <PaperProvider >
-      <Stack>
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        {/* Add other routes as needed */}
-        <Stack.Screen name="home" options={{ headerShown: true, title: 'Home' }} />
-      </Stack>
-    </PaperProvider>
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <PaperProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
+          <Stack.Screen name="onboardingquestions" />
+          <Stack.Screen name="onboarding" />
+          {/* NO need to include (tabs) here */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </PaperProvider>
+    </View>
   );
 }
