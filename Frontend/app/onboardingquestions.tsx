@@ -439,6 +439,7 @@ export default function Onboarding() {
             )}
           </TouchableOpacity>
         </View>
+        
       </View>
     </View>
   );
@@ -664,5 +665,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFF",
     marginRight: 4,
+  },
+  loginButton: {
+    alignItems: 'center',
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
+    paddingHorizontal: 24,
+  },
+  loginButtonText: {
+    color: '#F97C3E',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

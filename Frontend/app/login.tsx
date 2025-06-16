@@ -14,7 +14,7 @@ import { Checkbox } from "../~/components/ui/checkbox";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Input } from "../~/components/ui/input";
-import Constants from "expo-constants"; // Import expo-constants
+import Constants from "expo-constants";
 import { saveToken } from "../lib/tokenManager";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,7 +26,7 @@ const Login: React.FC = () => {
   const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
-  const [loading, setLoading] = useState(false); // To show loading state
+  const [loading, setLoading] = useState(false);
 
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
@@ -49,14 +49,12 @@ const Login: React.FC = () => {
   }, []);
 
   const handleLogin = async (): Promise<void> => {
-    // Dismiss keyboard on non-web platforms
     if (!isWeb) {
       Keyboard.dismiss();
     }
-    setError(""); // Clear previous errors
-    setLoading(true); // Set loading to true
+    setError("");
+    setLoading(true);
 
-    // Client-side validation
     if (!email.trim()) {
       setError("Please enter your email");
       setLoading(false);
@@ -68,7 +66,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
@@ -76,7 +73,6 @@ const Login: React.FC = () => {
       return;
     }
 
-    // Check if API_URL is configured
     if (!API_URL) {
       setError(
         "API URL is not configured. Please check your app.json/app.config.js."
@@ -98,23 +94,9 @@ const Login: React.FC = () => {
       const data = await response.json();
 
       if (response.ok && data.token && data.user) {
-        // --- KEY CHANGES ---
-        // 🔐 1. Save the token securely
         await saveToken(data.token);
-
-        // 💾 2. Save the non-sensitive user ID for easy access later
-        await AsyncStorage.setItem("userId", data.user.id); // Assuming the user object has an 'id'
-
-        // You can decide if you still need to store other 'userData'
-        // await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-
-        // Check if user has completed onboarding before
-        const hasCompletedOnboarding = await AsyncStorage.getItem(
-          "hasCompletedOnboarding"
-        );
-        if (hasCompletedOnboarding === "true") {
-          router.replace({ pathname: "/" }); // Go to home if already onboarded
-        }
+        await AsyncStorage.setItem("userId", data.user.id);
+        router.replace({ pathname: "/(tabs)" }); // Always navigate to home after successful login
       } else {
         setError(data?.msg || "Login failed. Please try again.");
       }
@@ -220,9 +202,9 @@ const Login: React.FC = () => {
               activeOpacity={1}
             >
               <Checkbox
-                checked={keepSignedIn} // Use keepSignedIn for the checked prop
-                onCheckedChange={setKeepSignedIn} // Pass setKeepSignedIn to update the state
-                className="h-5 w-5" // Adjust size for mobile
+                checked={keepSignedIn}
+                onCheckedChange={setKeepSignedIn}
+                className="h-5 w-5"
               />
               <Text className="text-black dark:text-white ml-2 text-base">
                 Keep me signed in

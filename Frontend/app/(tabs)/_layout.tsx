@@ -19,9 +19,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="stats"
+        name="notification"
         options={{
-          title: 'Stats',
+          title: 'Notification',
           tabBarIcon: ({ color, size }) => <Feather name="bar-chart" color={color} size={size} />,
         }}
       />
