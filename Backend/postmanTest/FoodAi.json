@@ -1,1 +1,28 @@
-http://localhost:3000/api/foodAI/generate (POST)
+https: //foodsuggestion.onrender.com/generate-meal (post)
+{
+    "name": "Moriam Islam",
+    "age": 60,
+    "gender": "female",
+    "pregnant": false,
+    "heightFeet": 5,
+    "heightInches": 2,
+    "weight": 58,
+    "activityLevel": "moderate",
+    "budget": 1200,
+    "medicalConditions": [
+        "diabetes"
+    ],
+    "diabetesRange": "90-140 mg/dL",
+    "allergies": [
+        "milk"
+    ],
+    "preferredFoodTypes": [
+        "fish",
+        "chicken",
+        "vegetables"
+    ]
+}
+// Expected outcome in postman testing 
+{
+    "meal_plan": "=============================\n#        1-Day Meal Plan\n# -----------------------------\n# Breakfast:\n# - Foods: 2 medium-sized boiled eggs, 2 pieces of ruti (flatbread), vegetable bhaji (mixed vegetables)\n# - Fruits: 1/2 cup guava\n# - Drinks/Tea: Green tea (unsweetened)\n# - Nutrition: High in protein and carbohydrates to support weight gain, with fiber from vegetables and guava. Green tea provides antioxidants.\n# - Estimated Cost: 150 TK\n\n# Lunch:\n# - Foods: Steamed fish with a generous portion of mixed vegetable curry (no oil), 1 cup plain rice.\n# - Fruits: None\n# - Drinks/Tea: None\n# - Nutrition: Provides lean protein and fiber, with minimal oil to aid blood sugar control. Rice provides carbohydrates.\n# - Estimated Cost: 250 TK\n\n# Snack:\n# - Foods: A handful of roasted chickpeas (chhola) and cucumber slices.\n# - Fruits: 1/2 cup green mango\n# - Drinks/Tea: Lemon water\n# - Nutrition: The chickpeas and cucumber provide a good combination of protein and fiber to keep you full and manage blood sugar. Green mango provides some nutrients.\n# - Estimated Cost: 180 TK\n\n# Dinner:\n# - Foods: Chicken soup (boiled chicken with vegetables), 1 medium roti.\n# - Fruits: None\n# - Drinks/Tea: None\n# - Nutrition: Easily digestible, providing protein and essential nutrients. Fiber from vegetables and carbohydrates from the roti.\n# - Estimated Cost: 220 TK\n\n-----------------------------\nTotal Estimated Cost: 800 TK\nTotal Calories: Approximately 1800 kcal (This is an estimation. Actual caloric value will vary.)\n\nWater Intake Recommendation: 2.5 liters\n\nNotes: This meal plan is designed to be higher in calories and provide adequate protein for underweight individuals, while carefully avoiding added sugars and dairy (due to diabetes and allergy) and keeping oil to a minimum for better blood sugar control. Meals are portioned to fit within the user's budget.\n"
+}
