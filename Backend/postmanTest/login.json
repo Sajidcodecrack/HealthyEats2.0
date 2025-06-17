@@ -1,5 +1,19 @@
-http://localhost:3000/api/user/login
+API: http://localhost:3000/api/user/login
+
+Method: Post
+
+Body (Raw json):
 {
-  "email": "john@example.com",
-  "password": "yourpassword"
+  "email": "test@example.com",
+  "password": "testpassword"
+}
+
+Expected Outcome in postman testing:
+{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUxYjYzYjlhNjRlMTBlNDE4ZTM4YjUiLCJpYXQiOjE3NTAxODU2NTMsImV4cCI6MTc1MDc5MDQ1M30.SYxqrrkajuwubilC-wZsHtmntYZICh3I8GBX3EB1jCE",
+    "user": {
+        "id": "6851b63b9a64e10e418e38b5",
+        "name": "testuser",
+        "email": "test@example.com"
+    }
 }
