@@ -1,97 +1,175 @@
-import { Text, View, ScrollView, SafeAreaView, Image, TouchableOpacity } from 'react-native';
-import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'; // Assuming you have @expo/vector-icons installed
+import {
+  Text,
+  View,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  useColorScheme,
+} from "react-native";
+import {
+  Feather,
+  MaterialCommunityIcons,
+  AntDesign,
+} from "@expo/vector-icons";
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   return (
-    <SafeAreaView className="flex-1 bg-white"> 
-      <ScrollView className="flex-1 bg-gray-100">
+    <View className={`flex-1 pt-8 ${isDark ? "bg-background" : "bg-white"}`}>
+      <ScrollView className="flex-1">
+        {/* Header */}
         <View className="flex-row justify-between items-center px-4 py-4 pt-8">
-          <Text className="text-3xl font-bold text-gray-800">Hi, Alex Grace</Text>
+          <Text
+            className={`text-3xl font-bold ${
+              isDark ? "text-white" : "text-gray-800"
+            }`}
+          >
+            Hi, Alex Grace
+          </Text>
           <View className="flex-row space-x-3">
-            <TouchableOpacity className="p-2 rounded-full bg-gray-200">
-              <Feather name="maximize" size={24} color="gray" />
+            <TouchableOpacity className="p-2 rounded-full bg-gray-200 dark:bg-muted">
+              <Feather
+                name="maximize"
+                size={24}
+                color={isDark ? "white" : "gray"}
+              />
             </TouchableOpacity>
-            <TouchableOpacity className="p-2 rounded-full bg-gray-200">
-              <MaterialCommunityIcons name="message-text-outline" size={24} color="gray" />
+            <TouchableOpacity className="p-2 rounded-full bg-gray-200 dark:bg-muted">
+              <MaterialCommunityIcons
+                name="message-text-outline"
+                size={24}
+                color={isDark ? "white" : "gray"}
+              />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View className="mx-4 mt-4 p-4 bg-white rounded-xl shadow-md">
-          <Text className="text-xl font-semibold text-gray-800 mb-3">Nutrition</Text>
-          <Text className="text-gray-600 mb-4">Eat upto 2000 cal</Text>
+        {/* Nutrition Card */}
+        <View className="mx-4 mt-4 p-4 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-muted">
+          <Text className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
+            Nutrition
+          </Text>
+          <Text className="text-gray-600 dark:text-gray-300 mb-4">
+            Eat upto 2000 cal
+          </Text>
+
           <View className="flex-row justify-between items-center">
             <View className="flex-1 mr-4">
-              <View className="mb-2">
-                <Text className="text-sm font-medium text-gray-700">Protein</Text>
-                <View className="w-full h-2 bg-orange-200 rounded-full">
-                  <View className="w-3/4 h-2 bg-orange-500 rounded-full"></View>
-                </View>
-              </View>
-              <View className="mb-2">
-                <Text className="text-sm font-medium text-gray-700">Fat</Text>
-                <View className="w-full h-2 bg-orange-200 rounded-full">
-                  <View className="w-1/2 h-2 bg-orange-500 rounded-full"></View>
-                </View>
-              </View>
-              <View>
-                <Text className="text-sm font-medium text-gray-700">Carbs</Text>
-                <View className="w-full h-2 bg-orange-200 rounded-full">
-                  <View className="w-5/6 h-2 bg-orange-500 rounded-full"></View>
-                </View>
-              </View>
+              {["Protein", "Fat", "Carbs"].map((label, i) => {
+                const width = [0.75, 0.5, 0.83][i];
+                return (
+                  <View className="mb-2" key={label}>
+                    <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {label}
+                    </Text>
+                    <View className="w-full h-2 bg-orange-200 dark:bg-orange-700 rounded-full">
+                      <View
+                        className="h-2 bg-orange-500 rounded-full"
+                        style={{ width: `${width * 100}%` }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
             </View>
-            <View className="w-20 h-20 rounded-full border-4 border-orange-400 justify-center items-center">
-            </View>
+            <View className="w-20 h-20 rounded-full border-4 border-orange-400 justify-center items-center" />
           </View>
         </View>
-        <View className="mx-4 mt-6 grid grid-cols-2 gap-4">
-            <TouchableOpacity className="flex-col justify-center items-center p-4 bg-white rounded-xl shadow-md"
-              onPress={() => console.log('Create Diet Plan')}>
-              <Text className="text-sm font-medium text-gray-700 text-center">Create Diet Plan</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity className="flex-col justify-center items-center p-4 bg-white rounded-xl shadow-md"
-              onPress={() => console.log('Recommended food')}>
-              <Text className="text-sm font-medium text-gray-700 text-center">Recommended food</Text>
+        {/* Feature Cards */}
+        <View className="flex flex-wrap flex-row justify-between mx-4 mt-6">
+          {[
+            {
+              label: "Recommended Food",
+              color: "#E6FCEB",
+              border: "border-green-500",
+              text: "text-green-700",
+              img: require("../../assets/images/RecommendedFood.png"),
+            },
+            {
+              label: "Consult Doctor",
+              color: "#E6F2FF",
+              border: "border-blue-500",
+              text: "text-blue-700",
+              img: require("../../assets/images/ConsultDoctor.png"),
+            },
+            {
+              label: "Diet Plan",
+              color: "#FFE6EF",
+              border: "border-pink-500",
+              text: "text-pink-700",
+              img: require("../../assets/images/DietPlan.png"),
+            },
+            {
+              label: "Fitness Plan",
+              color: "#FFF7E6",
+              border: "border-yellow-500",
+              text: "text-yellow-700",
+              img: require("../../assets/images/FitnessPlan.png"),
+            },
+          ].map((item) => (
+            <TouchableOpacity
+              key={item.label}
+              className={`w-[48%] mb-4 items-center p-4 rounded-2xl border ${item.border}`}
+              style={{
+                backgroundColor: isDark ? "#1f1f1f" : item.color,
+              }}
+              onPress={() => console.log(item.label)}
+            >
+              <Image
+                source={item.img}
+                className="w-20 h-20 mb-3"
+                resizeMode="contain"
+              />
+              <Text className={`text-center font-semibold ${item.text}`}>
+                {item.label}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity className="flex-col justify-center items-center p-4 bg-white rounded-xl shadow-md"
-              onPress={() => console.log('Ai Exercise Plan')}>
-              <Text className="text-sm font-medium text-gray-700 text-center">Ai Exercise Plan</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-col justify-center items-center p-4 bg-white rounded-xl shadow-md"
-              onPress={() => console.log('Health Monitoring')}>
-              <Text className="text-sm font-medium text-gray-700 text-center">Health Monitoring</Text>
-            </TouchableOpacity>
+          ))}
         </View>
-        <View className="mx-4 mt-6 p-4 bg-white rounded-xl shadow-md mb-20">
+
+        {/* Daily Eating Tracker */}
+        <View className="mx-4 mt-6 p-4 bg-white dark:bg-card rounded-xl mb-20 border border-gray-200 dark:border-muted">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-semibold text-gray-800">Track Daily Eating</Text>
-            <TouchableOpacity className="p-2 rounded-full bg-orange-500"
-              onPress={() => console.log('Add new meal')}>
+            <Text className="text-xl font-semibold text-gray-800 dark:text-white">
+              Track Daily Eating
+            </Text>
+            <TouchableOpacity
+              className="p-2 rounded-full bg-orange-500"
+              onPress={() => console.log("Add new meal")}
+            >
               <AntDesign name="plus" size={24} color="white" />
             </TouchableOpacity>
           </View>
-          <View className="mb-2">
-            <View className="flex-row justify-between py-1">
-              <Text className="text-gray-700">Fried chicken</Text>
-              <Text className="text-gray-700">200 cal</Text>
+          {[
+            { name: "Fried chicken", cal: 200 },
+            { name: "Eggs", cal: 80 },
+            { name: "Bread", cal: 90 },
+          ].map((item) => (
+            <View
+              key={item.name}
+              className="flex-row justify-between py-1"
+            >
+              <Text className="text-gray-700 dark:text-gray-300">
+                {item.name}
+              </Text>
+              <Text className="text-gray-700 dark:text-gray-300">
+                {item.cal} cal
+              </Text>
             </View>
-            <View className="flex-row justify-between py-1">
-              <Text className="text-gray-700">Eggs</Text>
-              <Text className="text-gray-700">80 cal</Text>
-            </View>
-            <View className="flex-row justify-between py-1">
-              <Text className="text-gray-700">Bread</Text>
-              <Text className="text-gray-700">90 cal</Text>
-            </View>
-          </View>
-          <TouchableOpacity className="mt-4 py-2 px-4 rounded-md self-end"
-            onPress={() => console.log('Enter new meal')}>
-            <Text className="text-gray-500">Enter new meal</Text>
+          ))}
+          <TouchableOpacity
+            className="mt-4 py-2 px-4 rounded-md self-end"
+            onPress={() => console.log("Enter new meal")}
+          >
+            <Text className="text-gray-500 dark:text-gray-400">
+              Enter new meal
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

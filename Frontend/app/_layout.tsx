@@ -41,7 +41,7 @@ export default function RootLayout() {
         router.replace('/signup');
       } else if (isAuthenticated === true) {
         if (onboardingCompleted === false) {
-          router.replace('/onboardingquestions');
+          router.replace('/onboarding');
         } else if (onboardingCompleted === true) {
           router.replace('/(tabs)');
         }
