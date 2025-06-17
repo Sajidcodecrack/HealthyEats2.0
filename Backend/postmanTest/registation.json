@@ -1,6 +1,21 @@
- http://localhost:3000/api/user/register (POST request)
+API: http://localhost:3000/api/user/register 
+Method: POST request
+ 
+Body (Raw JSON)
  {
   "name": "testuser",
   "email": "test@example.com",
   "password": "testpassword"
+}
+
+Expected Outcome in postman testing:
+{
+    "msg": "Registration successful!",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODUxYjYzYjlhNjRlMTBlNDE4ZTM4YjUiLCJpYXQiOjE3NTAxODU1MzEsImV4cCI6MTc1MDc5MDMzMX0.uV56UVm4-lzW-9a4Q1fsCJ3X1_HepFqfENfWW_n4esQ",
+    "userId": "6851b63b9a64e10e418e38b5",
+    "user": {
+        "id": "6851b63b9a64e10e418e38b5",
+        "name": "testuser",
+        "email": "test@example.com"
+    }
 }
