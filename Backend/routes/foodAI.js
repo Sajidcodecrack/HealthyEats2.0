@@ -41,7 +41,7 @@ router.post('/generate', async (req, res) => {
 
     // 3. Call AI Meal API
     const aiRes = await axios.post(
-      "https://foodsuggestion.onrender.com/generate-meal",
+      "https://healthyeats-meal-xohb.onrender.com/generate-meal",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
