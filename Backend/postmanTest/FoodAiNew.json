@@ -1,0 +1,97 @@
+// This API generates a JSON formatted personalized 1-day meal plan based on a user's health data and preferences.
+API: https://healthyeats-meal-xohb.onrender.com/generate-meal 
+
+Method: Post
+
+Auth: Bearer Token   (Token taken from log in)
+
+Body(Raw JSON):
+{
+    "name": "Moriam Islam",
+    "age": 60,
+    "gender": "female",
+    "pregnant": false,
+    "heightFeet": 5,
+    "heightInches": 2,
+    "weight": 58,
+    "activityLevel": "moderate",
+    "budget": 1200,
+    "medicalConditions": [
+        "diabetes"
+    ],
+    "diabetesRange": "90-140 mg/dL",
+    "allergies": [
+        "milk"
+    ],
+    "preferredFoodTypes": [
+        "fish",
+        "chicken",
+        "vegetables"
+    ]
+}
+
+Expected outcome in postman testing:
+{
+    "Breakfast": {
+        "Foods": [
+            "2 pieces of ruti made with whole wheat flour (atta)",
+            "Vegetable sabzi (mixed vegetables cooked with spices and a little oil, avoid potato)",
+            "2 small boiled eggs"
+        ],
+        "Fruits": [
+            "1/2 cup of papaya"
+        ],
+        "Drinks/Tea": [
+            "1 cup of black tea (unsweetened)"
+        ],
+        "Nutrition": "High in fiber, moderate carbohydrates, and protein. Controls blood sugar levels due to the low glycemic index of the foods and controlled portion size.",
+        "EstimatedCost": "150 TK"
+    },
+    "Lunch": {
+        "Foods": [
+            "1 cup of brown rice",
+            "Fish curry (small portion of fish, cooked with plenty of vegetables, avoid excess oil)",
+            "Large portion of vegetable salad (cucumber, tomatoes, onions, carrots, with a light lemon dressing)",
+            "Small portion of chicken curry (skinless, cooked with vegetables)"
+        ],
+        "Fruits": [
+            "1/2 cup of guava"
+        ],
+        "Drinks/Tea": [
+            "1 glass of water with lemon"
+        ],
+        "Nutrition": "Balanced meal with lean protein, complex carbohydrates, and fiber. Fish and chicken provide protein, while the vegetables and brown rice offer fiber to aid digestion and regulate blood sugar.",
+        "EstimatedCost": "400 TK"
+    },
+    "Snack": {
+        "Foods": [
+            "1 small bowl of roasted chickpeas (chola)",
+            "10-12 pieces of almonds"
+        ],
+        "Fruits": [
+            "1 medium apple"
+        ],
+        "Drinks/Tea": [
+            "1 cup of herbal tea (e.g., chamomile)"
+        ],
+        "Nutrition": "Provides healthy fats, protein, and fiber, which help to keep you full and control blood sugar levels. Low in sugar.",
+        "EstimatedCost": "250 TK"
+    },
+    "Dinner": {
+        "Foods": [
+            "1 cup of vegetable soup (made with a variety of vegetables and minimal oil)",
+            "Grilled fish (small portion)",
+            "Steamed vegetables (e.g., broccoli, spinach, carrots)"
+        ],
+        "Fruits": [],
+        "Drinks/Tea": [
+            "1 glass of water"
+        ],
+        "Nutrition": "Light and easily digestible meal, rich in nutrients and low in carbohydrates. Supports stable blood sugar levels before bedtime.",
+        "EstimatedCost": "300 TK"
+    },
+    "TotalCalories": "Approximately 1600-1800 calories",
+    "TotalEstimatedCost": "1100 TK",
+    "WaterIntakeLiters": "Approximately 2.5-3 liters throughout the day",
+    "Notes": "This meal plan is designed for a 60-year-old female with diabetes and milk allergies. It prioritizes low glycemic index foods, portion control, and the inclusion of vegetables and lean protein sources. Remember to consult with your doctor or a registered dietitian for personalized advice. Monitor blood glucose levels and adjust portion sizes as needed. Avoid sugary drinks and processed foods. This meal plan excludes all dairy products."
+}
