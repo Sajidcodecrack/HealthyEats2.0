@@ -115,7 +115,7 @@ router.post('/generate', async (req, res) => {
     const meal = new Meals({
       date:     new Date(),
       mealType: 'fullDay',
-      menu:     [mealPlanText],
+      menu:     aiRes.data,
       aiSource: 'Gemini v2 Render',
       userId,
     });
@@ -124,7 +124,7 @@ router.post('/generate', async (req, res) => {
     // Return formatted plan to frontend
     res.json({
       message:  'Meal plan generated and saved!',
-      mealPlan: mealPlanText,
+      mealPlan: aiRes.data,
     });
 
   } catch (err) {

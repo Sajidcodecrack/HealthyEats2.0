@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const MealsSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   mealType: { type: String, required: true },
-  menu: [String],
+  menu: { type: mongoose.Schema.Types.Mixed, // or just Object
+  required: true},
   nutritionInfo: { type: mongoose.Schema.Types.Mixed }, // Can be detailed object
   calories: { type: Number },
   confirmed: { type: Boolean, default: false },
