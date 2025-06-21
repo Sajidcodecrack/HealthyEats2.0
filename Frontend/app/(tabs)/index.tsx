@@ -5,171 +5,189 @@ import {
   Image,
   TouchableOpacity,
   useColorScheme,
+  StyleSheet,
 } from "react-native";
 import {
   Feather,
   MaterialCommunityIcons,
   AntDesign,
 } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   return (
-    <View className={`flex-1 pt-8 ${isDark ? "bg-background" : "bg-white"}`}>
+    <View className={`flex-1 pt-14 ${isDark ? "bg-background" : "bg-white"}`}>
       <ScrollView className="flex-1">
         {/* Header */}
-        <View className="flex-row justify-between items-center px-4 py-4 pt-8">
-          <Text
-            className={`text-3xl font-bold ${
-              isDark ? "text-white" : "text-gray-800"
-            }`}
-          >
-            Hi, Alex Grace
-          </Text>
-          <View className="flex-row space-x-3">
-            <TouchableOpacity className="p-2 rounded-full bg-gray-200 dark:bg-muted">
-              <Feather
-                name="maximize"
-                size={24}
-                color={isDark ? "white" : "gray"}
-              />
+        <View className="flex-row justify-between items-center px-4 py-2">
+          <View className="flex-row items-center">
+            <Image
+              source={require("../../assets/images/profile.jpeg")} // Assuming you have a profile.png in assets/images
+              className="w-12 h-12 rounded-full"
+            />
+          </View>
+          <View className="flex-row items-center space-x-3">
+            <TouchableOpacity className="flex-row items-center px-3 py-2 rounded-full bg-green-700">
+              <Feather name="arrow-up-circle" size={16} color="white" />
+              <Text className="text-white ml-2 font-semibold">
+                Upgrade pro
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity className="p-2 rounded-full bg-gray-200 dark:bg-muted">
-              <MaterialCommunityIcons
-                name="message-text-outline"
-                size={24}
-                color={isDark ? "white" : "gray"}
-              />
-            </TouchableOpacity>
+            
           </View>
         </View>
 
-        {/* Nutrition Card */}
-        <View className="mx-4 mt-4 p-4 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-muted">
-          <Text className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
-            Nutrition
-          </Text>
-          <Text className="text-gray-600 dark:text-gray-300 mb-4">
-            Eat upto 2000 cal
-          </Text>
-
-          <View className="flex-row justify-between items-center">
-            <View className="flex-1 mr-4">
-              {["Protein", "Fat", "Carbs"].map((label, i) => {
-                const width = [0.75, 0.5, 0.83][i];
-                return (
-                  <View className="mb-2" key={label}>
-                    <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {label}
-                    </Text>
-                    <View className="w-full h-2 bg-orange-200 dark:bg-orange-700 rounded-full">
-                      <View
-                        className="h-2 bg-orange-500 rounded-full"
-                        style={{ width: `${width * 100}%` }}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-            <View className="w-20 h-20 rounded-full border-4 border-orange-400 justify-center items-center" />
-          </View>
-        </View>
-
-        {/* Feature Cards */}
-        <View className="flex flex-wrap flex-row justify-between mx-4 mt-6">
-          {[
-            {
-              label: "Recommended Food",
-              color: "#E6FCEB",
-              border: "border-green-500",
-              text: "text-green-700",
-              img: require("../../assets/images/RecommendedFood.png"),
-            },
-            {
-              label: "Consult Doctor",
-              color: "#E6F2FF",
-              border: "border-blue-500",
-              text: "text-blue-700",
-              img: require("../../assets/images/ConsultDoctor.png"),
-            },
-            {
-              label: "Diet Plan",
-              color: "#FFE6EF",
-              border: "border-pink-500",
-              text: "text-pink-700",
-              img: require("../../assets/images/DietPlan.png"),
-            },
-            {
-              label: "Fitness Plan",
-              color: "#FFF7E6",
-              border: "border-yellow-500",
-              text: "text-yellow-700",
-              img: require("../../assets/images/FitnessPlan.png"),
-            },
-          ].map((item) => (
+        {/* Navigation Tabs */}
+        <View className="flex-row justify-stretch gap-10 mt-4 px-4">
+          {["Progress", "Plans", "Store"].map((tab) => (
             <TouchableOpacity
-              key={item.label}
-              className={`w-[48%] mb-4 items-center p-4 rounded-2xl border ${item.border}`}
-              style={{
-                backgroundColor: isDark ? "#1f1f1f" : item.color,
-              }}
-              onPress={() => console.log(item.label)}
+              key={tab}
+              className={`pb-2 ${
+                tab === "Progress"
+                  ? "border-b-2 border-green-700"
+                  : "border-b-2 border-transparent"
+              }`}
             >
-              <Image
-                source={item.img}
-                className="w-20 h-20 mb-3"
-                resizeMode="contain"
-              />
-              <Text className={`text-center font-semibold ${item.text}`}>
-                {item.label}
+              <Text
+                className={`text-lg font-semibold ${
+                  tab === "Progress"
+                    ? "text-green-700"
+                    : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                {tab}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Daily Eating Tracker */}
-        <View className="mx-4 mt-6 p-4 bg-white dark:bg-card rounded-xl mb-20 border border-gray-200 dark:border-muted">
+        {/* Today's Goals Section */}
+        <Text
+          className={`text-2xl font-bold mt-6 mb-4 px-4 ${
+            isDark ? "text-white" : "text-gray-800"
+          }`}
+        >
+          Today's Goals
+        </Text>
+
+        {/* Track Food Card */}
+        <View className="mx-4 p-4 bg-white dark:bg-card rounded-xl shadow-sm">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-semibold text-gray-800 dark:text-white">
-              Track Daily Eating
-            </Text>
-            <TouchableOpacity
-              className="p-2 rounded-full bg-orange-500"
-              onPress={() => console.log("Add new meal")}
-            >
-              <AntDesign name="plus" size={24} color="white" />
-            </TouchableOpacity>
+            <View className="flex-row items-center">
+              <View className="p-2 rounded-full bg-blue-100 mr-3">
+                <MaterialCommunityIcons
+                  name="silverware-fork-knife"
+                  size={24}
+                  color="gray"
+                />
+              </View>
+              <View>
+                <Text className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Track Food
+                </Text>
+                <Text className="text-sm text-gray-500 dark:text-gray-400">
+                  Eat 2,000 Cal
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row space-x-2">
+              <TouchableOpacity className="p-2 rounded-full bg-gray-100 dark:bg-muted">
+                <Feather name="camera" size={20} color="gray" />
+              </TouchableOpacity>
+              <TouchableOpacity className="p-2 ml-2 rounded-full bg-orange-100">
+                <AntDesign name="plus" size={20} color="orange" />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          <View className="flex-row flex-wrap justify-between">
+            {["Protein", "Fats", "Carbs", "Fibre"].map((item) => (
+              <View key={item} className="w-[48%] mb-3">
+                <Text className="text-sm text-gray-600 dark:text-gray-300">
+                  {item}: 0%
+                </Text>
+                <View className="w-full h-1 bg-gray-200 rounded-full dark:bg-gray-700" />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Other Goals List */}
+        <View className="mx-4 mt-4 p-4 bg-white dark:bg-card rounded-xl shadow-sm mb-20">
           {[
-            { name: "Fried chicken", cal: 200 },
-            { name: "Eggs", cal: 80 },
-            { name: "Bread", cal: 90 },
-          ].map((item) => (
+            {
+              icon: (
+                <MaterialCommunityIcons name="weight-kg" size={24} color="gray" />
+              ),
+              label: "Weight",
+              goal: "Set Goal",
+            },
+            {
+              icon: (
+                <MaterialCommunityIcons
+                  name="dumbbell"
+                  size={24}
+                  color="gray"
+                />
+              ),
+              label: "Workout",
+              goal: "Goal: 620 cal",
+            },
+            {
+              icon: <Feather name="walking" size={24} color="gray" />,
+              label: "Steps",
+              goal: "Set Up Auto-Tracking",
+            },
+            {
+              icon: <Feather name="moon" size={24} color="gray" />,
+              label: "Sleep",
+              goal: "Goal: 8hr",
+            },
+            {
+              icon: <Feather name="droplet" size={24} color="gray" />,
+              label: "Water",
+              goal: "Goal: 8 glasses",
+            },
+          ].map((item, index) => (
             <View
-              key={item.name}
-              className="flex-row justify-between py-1"
+              key={index}
+              className="flex-row justify-between items-center py-2"
             >
-              <Text className="text-gray-700 dark:text-gray-300">
-                {item.name}
-              </Text>
-              <Text className="text-gray-700 dark:text-gray-300">
-                {item.cal} cal
-              </Text>
+              <View className="flex-row items-center">
+                <View className="p-2 rounded-full bg-gray-100 mr-3">
+                  {item.icon}
+                </View>
+                <View>
+                  <Text className="text-lg font-semibold text-gray-800 dark:text-white">
+                    {item.label}
+                  </Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400">
+                    {item.goal}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity className="p-2 rounded-full bg-gray-100 dark:bg-muted">
+                {item.label === "Steps" ? (
+                  <Feather name="chevron-right" size={20} color="gray" />
+                ) : (
+                  <AntDesign name="plus" size={20} color="gray" />
+                )}
+              </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity
-            className="mt-4 py-2 px-4 rounded-md self-end"
-            onPress={() => console.log("Enter new meal")}
-          >
-            <Text className="text-gray-500 dark:text-gray-400">
-              Enter new meal
-            </Text>
-          </TouchableOpacity>
         </View>
+        
       </ScrollView>
+      {/* Floating Action Button - assuming it's for adding something */}
+      <TouchableOpacity
+        className="absolute bottom-6 right-6 p-4 rounded-full bg-green-500 shadow-lg"
+        onPress={() => console.log("FAB Pressed")}
+      >
+        <MaterialCommunityIcons name="stars" size={28} color="white" />
+      </TouchableOpacity>
     </View>
   );
 }
