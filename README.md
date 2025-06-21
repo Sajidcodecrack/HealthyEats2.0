@@ -41,7 +41,7 @@ An open-source AI-powered mobile app designed to combat chronic diseases (e.g., 
 | Name | Role |
 |------|------|
 | Sahil al Farib | Frontend Engineer |
-| Momota Ahsana Meem | Backend Engineer |
+| Momota Ahsana Meem | Frontend Engineer |
 | Khan MD Shams Arefin | Backend Engineer|
 | Sheikh Redwanul Islam | Documentation & QA Engineer |
 | Sajid Ahamed | AI/ML Engineer Team Lead

@@ -1,16 +1,21 @@
-// Backend/routes/foodPreferences.js
+// routes/foodPreferences.js
+
 const express = require('express');
 const router = express.Router();
 const FoodPreferences = require('../models/FoodPreferences');
 
-// POST /api/foodPreferences
+// Create or update
 router.post('/', async (req, res) => {
+  const { userId, foodTypes, allergies, medicalConditions, diabeticRange, pregnancyStatus, budget } = req.body;
   try {
-    const foodPref = new FoodPreferences(req.body);
-    await foodPref.save();
-    res.status(201).json(foodPref);
+    const prefs = await FoodPreferences.findOneAndUpdate(
+      { userId },
+      { foodTypes, allergies, medicalConditions, diabeticRange, pregnancyStatus, budget },
+      { upsert: true, new: true }
+    );
+    res.json(prefs);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Could not save food preferences' });
   }
 });
 

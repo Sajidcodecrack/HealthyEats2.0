@@ -1,4 +1,10 @@
-http://localhost:3000/api/user-profile/ (Post)
+API: http://localhost:3000/api/user-profile/ 
+
+Method: Post
+
+Auth: Bearer Token   (Token taken from log in)
+
+Body (Raw JSON):
 {
   "age": 25,
   "gender": "male",
@@ -6,6 +12,47 @@ http://localhost:3000/api/user-profile/ (Post)
   "heightUnit": "cm",
   "weight": 70,
   "weightUnit": "kg",
-  "userId": "68378dc74a6468fe944a62e5"
+  "userId": "6851b63b9a64e10e418e38b5"
 }
-http://localhost:3000/api/user-profile/68378dc74a6468fe944a62e5 (PUT) for update profile
+
+Expected Outcome:
+{
+    "age": 25,
+    "gender": "male",
+    "weight": 70,
+    "userId": "6851b63b9a64e10e418e38b5",
+    "_id": "6851b89e9a64e10e418e38ba",
+    "updatedAt": "2025-06-17T18:49:02.774Z",
+    "__v": 0
+}
+
+
+
+// For Update Profile
+API: http://localhost:3000/api/user-profile/6851b63b9a64e10e418e38b5 
+
+Method: PUT
+
+Auth: Bearer Token   
+
+Body (Raw JSON):
+{
+  "age": 25,
+  "gender": "male",
+  "height": 175,
+  "heightUnit": "cm",
+  "weight": 70,
+  "weightUnit": "kg",
+  "userId": "6851b63b9a64e10e418e38b5"
+}
+
+Expected Outcome:
+{
+    "_id": "6851b89e9a64e10e418e38ba",
+    "age": 25,
+    "gender": "male",
+    "weight": 70,
+    "userId": "6851b63b9a64e10e418e38b5",
+    "updatedAt": "2025-06-17T18:52:55.055Z",
+    "__v": 0
+}

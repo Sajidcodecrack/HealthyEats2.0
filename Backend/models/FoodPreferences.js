@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
-const FoodPreferencesSchema = new mongoose.Schema({
-  foodTypes: [String],
-  allergies: [String],
-  budget: { type: Number },
-  budgetUnit: { type: String },
-  pregnancyStatus: { type: String },
-  medicalConditions: [String],
-  lastUsed: { type: Date },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true }
-});
+const foodPreferencesSchema = new mongoose.Schema({
+  userId:      { type: mongoose.Types.ObjectId, ref: 'User', required: true },
+  foodTypes:       [String],     // e.g. ['vegetarian']
+  allergies:       [String],     // e.g. ['nuts']
+  medicalConditions: [String],   // e.g. ['diabetes','heart']
+  diabeticRange:   { type: String },   // e.g. '120-140'
+  pregnancyStatus: { type: Boolean },  // true if pregnant
+  budget:          { type: Number },   // BDT per meal
+}, { timestamps: true });
 
-module.exports = mongoose.model('FoodPreferences', FoodPreferencesSchema);
+module.exports = mongoose.model('FoodPreferences', foodPreferencesSchema);
