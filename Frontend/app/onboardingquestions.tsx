@@ -61,7 +61,7 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
 
   const [age, setAge] = useState("");
-  const [heightCm, setHeightCm] = useState("");
+  // Removed heightCm as it's no longer needed for storage
   const [heightFeet, setHeightFeet] = useState("");
   const [heightInches, setHeightInches] = useState("");
   const [weight, setWeight] = useState("");
@@ -103,13 +103,14 @@ export default function Onboarding() {
       return;
     }
 
-    if (onboardingSteps[currentStep].content === "Height") {
-      const feet = parseFloat(heightFeet) || 0;
-      const inches = parseFloat(heightInches) || 0;
-      const totalInches = feet * 12 + inches;
-      const convertedCm = totalInches * 2.54;
-      setHeightCm(convertedCm.toFixed(2));
-    }
+    // Removed height conversion logic from handleNext as height is now stored in feet/inches
+    // if (onboardingSteps[currentStep].content === "Height") {
+    //   const feet = parseFloat(heightFeet) || 0;
+    //   const inches = parseFloat(heightInches) || 0;
+    //   const totalInches = feet * 12 + inches;
+    //   const convertedCm = totalInches * 2.54;
+    //   setHeightCm(convertedCm.toFixed(2));
+    // }
 
     if (currentStep < onboardingSteps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -141,10 +142,11 @@ export default function Onboarding() {
       userId: userId,
       age: parseInt(age, 10),
       gender: gender,
-      height: parseFloat(heightCm), // Use the converted height in cm
+      heightFeet: parseInt(heightFeet, 10), // Send feet directly
+      heightInches: parseInt(heightInches, 10), // Send inches directly
       weight: parseFloat(weight),
       // Add units if your backend schema requires them, otherwise they can be omitted
-      heightUnit: "cm",
+      // heightUnit: "ft/in", // Removed as per schema
       weightUnit: "kg",
     };
 
@@ -381,12 +383,12 @@ export default function Onboarding() {
             </Text>
           </View>
           <View style={styles.stepHeader}>
-              {/* Icon rendering can be placed here */}
-              <Image
-                source={require("../assets/images/IconTransparent.png")}
-                style={{ width: 120, height: 120}}
-                resizeMode="contain"
-              />
+            {/* Icon rendering can be placed here */}
+            <Image
+              source={require("../assets/images/IconTransparent.png")}
+              style={{ width: 120, height: 120}}
+              resizeMode="contain"
+            />
             <Text style={styles.stepTitle}>{step.title}</Text>
             <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
           </View>

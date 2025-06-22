@@ -7,16 +7,14 @@ import {
   useColorScheme,
   StyleSheet,
 } from "react-native";
-import {
-  Feather,
-  MaterialCommunityIcons,
-  AntDesign,
-} from "@expo/vector-icons";
-import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
+import { Feather, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient"; // Import LinearGradient
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const navigation = useNavigation();
 
   return (
     <View className={`flex-1 pt-14 ${isDark ? "bg-background" : "bg-white"}`}>
@@ -32,11 +30,8 @@ export default function HomeScreen() {
           <View className="flex-row items-center space-x-3">
             <TouchableOpacity className="flex-row items-center px-3 py-2 rounded-full bg-green-700">
               <Feather name="arrow-up-circle" size={16} color="white" />
-              <Text className="text-white ml-2 font-semibold">
-                Upgrade pro
-              </Text>
+              <Text className="text-white ml-2 font-semibold">Upgrade pro</Text>
             </TouchableOpacity>
-            
           </View>
         </View>
 
@@ -115,12 +110,40 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* New buttons below Track Food Card */}
+        <View className="mx-4 mt-4 flex-row justify-between">
+          <TouchableOpacity
+            className="flex-1 mr-2 p-3 bg-white dark:bg-card rounded-xl shadow-sm items-center"
+            onPress={() => navigation.navigate("foodpref")}
+          >
+            <MaterialCommunityIcons
+              name="food-apple-outline"
+              size={24}
+              color="green"
+            />
+            <Text className="text-sm font-semibold mt-1 text-gray-800 dark:text-white">
+              Generate Meal Plan
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity className="flex-1 ml-2 p-3 bg-white dark:bg-card rounded-xl shadow-sm items-center">
+            <MaterialCommunityIcons name="run" size={24} color="blue" />
+            <Text className="text-sm font-semibold mt-1 text-gray-800 dark:text-white">
+              Generate Fitness
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Other Goals List */}
         <View className="mx-4 mt-4 p-4 bg-white dark:bg-card rounded-xl shadow-sm mb-20">
           {[
             {
               icon: (
-                <MaterialCommunityIcons name="weight-kg" size={24} color="gray" />
+                <MaterialCommunityIcons
+                  name="weight-kg"
+                  size={24}
+                  color="gray"
+                />
               ),
               label: "Weight",
               goal: "Set Goal",
@@ -179,7 +202,6 @@ export default function HomeScreen() {
             </View>
           ))}
         </View>
-        
       </ScrollView>
       {/* Floating Action Button - assuming it's for adding something */}
       <TouchableOpacity

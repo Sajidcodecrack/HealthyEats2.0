@@ -59,6 +59,8 @@ export default function RootLayout() {
           <Stack.Screen name="signup" />
           <Stack.Screen name="onboardingquestions" />
           <Stack.Screen name="onboarding" />
+          <Stack.Screen name="foodpref" />
+          <Stack.Screen name="mealplan" />
           {/* NO need to include (tabs) here */}
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>

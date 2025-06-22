@@ -19,4 +19,21 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+router.get('/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const prefs = await FoodPreferences.findOne({ userId });
+
+    if (!prefs) {
+      return res.status(404).json({ message: 'Preferences not found' });
+    }
+
+    res.json(prefs);
+  } catch (err) {
+    console.error('Error fetching preferences:', err);
+    res.status(500).json({ error: 'Failed to fetch preferences' });
+  }
+});
 module.exports = router;

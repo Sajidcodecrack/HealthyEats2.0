@@ -3,7 +3,6 @@ API: https://healthyeats-meal-xohb.onrender.com/generate-meal
 
 Method: Post
 
-Auth: Bearer Token   (Token taken from log in)
 
 Body(Raw JSON):
 {
