@@ -11,6 +11,12 @@ const MealsSchema = new mongoose.Schema({
   feedback: { type: String },
   aiSource: { type: String },
   createdAt: { type: Date, default: Date.now },
+  recipe: {
+  title: { type: String },
+  ingredients: [String],
+  steps: [String]
+}
+, // To store the generated recipe
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true }
 });
 

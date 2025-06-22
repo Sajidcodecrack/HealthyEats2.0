@@ -1,0 +1,7 @@
+// Post (api)=> http://localhost:3000/api/meals/generate-recipe
+
+json 
+{
+  "mealId": "68583072c641bb404b0011ba",
+  "mealType": "Breakfast"
+}

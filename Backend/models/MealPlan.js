@@ -1,13 +1,20 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const RecipeSchema = new Schema({
+  title: { type: String },
+  ingredients: { type: [String] },
+  steps: { type: [String] }
+}, { _id: false }); // Prevent nested _id creation
+
 const MealSectionSchema = new Schema({
   Foods: { type: [String], required: true },
   Fruits: { type: [String], required: true },
   Drinks_Tea: { type: [String], required: true },
   Nutrition: { type: String, required: true },
   EstimatedCost: { type: String, required: true },
-});
+  recipe: { type: RecipeSchema, default: null } // ✅ Add this line
+}, { _id: false });
 
 const MealPlanSchema = new Schema(
   {
