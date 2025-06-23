@@ -14,9 +14,9 @@ function Checkbox({
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        'web:peer h-4 w-4 native:h-[20] native:w-[20] shrink-0 rounded-sm native:rounded border transition-colors duration-200',
+        'web:peer h-4 w-4 native:h-[20] native:w-[20] shrink-0 rounded-xl native:rounded border transition-colors duration-200',
         isChecked
-          ? 'border-primary bg-primary'
+          ? 'border-primary bg-emerald-500'
           : 'border-gray-400 dark:border-gray-600 bg-white dark:bg-black', // ← use visible background
         className
       )}

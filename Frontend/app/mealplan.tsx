@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,25 +7,31 @@ import {
   Alert,
   TouchableOpacity,
   StyleSheet,
+  useColorScheme,
+  Modal,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
-// This import assumes you have a helper file for token management.
-// If not, you'll need to implement or replace this logic.
 import { getToken } from "~/lib/tokenManager";
 
 // --- TYPE DEFINITIONS ---
-// Define the shape of a single meal section for the UI state
+type Recipe = {
+  title: string;
+  ingredients: string[];
+  steps: string[];
+};
+
 type MealSection = {
   Foods: string[];
   Fruits: string[];
-  DrinksOrTea: string[]; // This is the consistent key for our frontend state
+  DrinksOrTea: string[];
   Nutrition: string;
   EstimatedCost: string;
+  recipe: Recipe | null;
 };
 
-// Define the shape of the entire meal plan response for the UI state
 interface MealPlanResponse {
   Breakfast: MealSection;
   Lunch: MealSection;
@@ -37,19 +43,31 @@ interface MealPlanResponse {
   Notes: string;
 }
 
-// Get the API URL from Expo's constants
 const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
 export default function MealPlanScreen() {
   const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
+  const [mealPlanId, setMealPlanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generatingForMeal, setGeneratingForMeal] = useState<string | null>(null);
+  const [recipeModalVisible, setRecipeModalVisible] = useState(false);
+  const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
+  const [currentMealType, setCurrentMealType] = useState<string>("");
+  
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  
+  // Colors
+  const bgColor = isDark ? "#0f172a" : "#f0fdf4";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const textColor = isDark ? "#f1f5f9" : "#1f2937";
+  const secondaryText = isDark ? "#94a3b8" : "#64748b";
+  const primaryColor = "#059669";
+  const accentColor = "#34d399";
+  const borderColor = isDark ? "#334155" : "#d1fae5";
 
-  /**
-   * Normalizes a meal section from any source (our backend or external API)
-   * into the consistent MealSection type for our UI state.
-   * @param section - The raw meal section object.
-   * @returns A normalized MealSection object.
-   */
+  const styles = useMemo(() => createStyles(isDark), [isDark]);
+
   const normalizeMealSection = (section: any): MealSection => {
     if (!section) {
       return {
@@ -58,33 +76,25 @@ export default function MealPlanScreen() {
         DrinksOrTea: [],
         Nutrition: "",
         EstimatedCost: "",
+        recipe: null,
       };
     }
     return {
       Foods: section.Foods ?? [],
       Fruits: section.Fruits ?? [],
-      // This handles both "Drinks/Tea" from the external API and "Drinks_Tea" from our backend
       DrinksOrTea: section["Drinks/Tea"] ?? section.Drinks_Tea ?? [],
       Nutrition: section.Nutrition ?? "",
       EstimatedCost: section.EstimatedCost ?? "",
+      recipe: section.recipe ?? null,
     };
   };
 
-  /**
-   * Fetches the user's profile and food preferences to build the payload
-   * needed for meal generation.
-   * @param userId - The ID of the user.
-   * @returns An object containing the user's data for the meal generation API.
-   */
-  // Updated getUserProfileForMealGen function
   const getUserProfileForMealGen = async (userId: string) => {
     try {
       const token = await getToken();
       const profileRes = await axios.get(
         `${API_URL}/api/user-profile/${userId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       const prefsRes = await axios.get(
         `${API_URL}/api/foodPreferences/${userId}`
@@ -97,8 +107,8 @@ export default function MealPlanScreen() {
         age: profile.age,
         gender: profile.gender,
         pregnant: prefs.pregnancyStatus ?? false,
-        heightFeet: profile.heightFeet, // Keep as feet
-        heightInches: profile.heightInches, // Keep as inches
+        heightFeet: profile.heightFeet,
+        heightInches: profile.heightInches,
         weight: profile.weight,
         activityLevel: "moderate",
         budget: prefs.budget ?? 100,
@@ -124,11 +134,12 @@ export default function MealPlanScreen() {
           return;
         }
 
-        // 1. Try fetching an existing meal plan from our backend
+        // Try fetching existing meal plan
         try {
           const res = await axios.get(`${API_URL}/api/mealplan/${userId}`);
           if (res.data) {
             const data = res.data;
+            setMealPlanId(data._id);
             const formattedPlan: MealPlanResponse = {
               Breakfast: normalizeMealSection(data.Breakfast),
               Lunch: normalizeMealSection(data.Lunch),
@@ -141,15 +152,13 @@ export default function MealPlanScreen() {
             };
             setMealPlan(formattedPlan);
             setLoading(false);
-            return; // Meal plan found, we are done!
+            return;
           }
         } catch (err) {
-          console.log(
-            "Meal plan not found on our backend, generating a new one."
-          );
+          console.log("Meal plan not found, generating a new one.");
         }
 
-        // 2. Generate a new meal plan using the external API
+        // Generate new meal plan
         const userProfile = await getUserProfileForMealGen(userId);
         const generateRes = await axios.post(
           "https://healthyeats-meal-xohb.onrender.com/generate-meal",
@@ -157,15 +166,15 @@ export default function MealPlanScreen() {
         );
         const generatedPlan = generateRes.data;
 
-        // 3. Transform the generated data to match our backend's schema
         const transformMealSectionForBackend = (section: any) => {
           if (!section) return undefined;
           return {
             Foods: section.Foods || [],
             Fruits: section.Fruits || [],
-            Drinks_Tea: section["Drinks/Tea"] || [], // Map "Drinks/Tea" to "Drinks_Tea"
+            Drinks_Tea: section["Drinks/Tea"] || [],
             Nutrition: section.Nutrition || "",
             EstimatedCost: section.EstimatedCost || "",
+            recipe: null, // Initialize recipe as null
           };
         };
 
@@ -181,10 +190,12 @@ export default function MealPlanScreen() {
           Notes: generatedPlan.Notes,
         };
 
-        // 4. Save the correctly structured payload to our backend
-        await axios.post(`${API_URL}/api/mealplan/`, backendPayload);
+        // Save to backend and get ID
+        const saveRes = await axios.post(`${API_URL}/api/mealplan/`, backendPayload);
+        const savedPlan = saveRes.data;
+        setMealPlanId(savedPlan._id);
 
-        // 5. Format the newly generated plan for display in the UI
+        // Format for UI
         const formattedForUI: MealPlanResponse = {
           Breakfast: normalizeMealSection(generatedPlan.Breakfast),
           Lunch: normalizeMealSection(generatedPlan.Lunch),
@@ -195,12 +206,15 @@ export default function MealPlanScreen() {
           WaterIntakeLiters: generatedPlan.WaterIntakeLiters,
           Notes: generatedPlan.Notes,
         };
+        // Add recipe field initialized to null
+        formattedForUI.Breakfast.recipe = null;
+        formattedForUI.Lunch.recipe = null;
+        formattedForUI.Snack.recipe = null;
+        formattedForUI.Dinner.recipe = null;
+        
         setMealPlan(formattedForUI);
       } catch (error: any) {
-        console.error(
-          "Error in fetchOrGenerateMealPlan:",
-          error.response?.data || error.message
-        );
+        console.error("Error:", error.response?.data || error.message);
         Alert.alert(
           "Error",
           "Could not load or generate your meal plan. Please ensure your profile is complete and try again."
@@ -213,11 +227,51 @@ export default function MealPlanScreen() {
     fetchOrGenerateMealPlan();
   }, []);
 
-  const handleGenerateRecipe = (mealType: string, foods: string[]) => {
-    Alert.alert(
-      "Generate Recipe",
-      `This would generate a recipe for ${mealType} with: ${foods.join(", ")}.`
-    );
+  const handleGenerateRecipe = async (mealType: string) => {
+    if (!mealPlanId) {
+      Alert.alert("Error", "Meal plan not loaded properly");
+      return;
+    }
+    
+    setCurrentMealType(mealType);
+    
+    // Check if recipe already exists
+    const mealSection = mealPlan?.[mealType as keyof MealPlanResponse] as MealSection;
+    if (mealSection?.recipe) {
+      setCurrentRecipe(mealSection.recipe);
+      setRecipeModalVisible(true);
+      return;
+    }
+
+    // Generate new recipe
+    setGeneratingForMeal(mealType);
+    
+    try {
+      const token = await getToken();
+      const response = await axios.post(
+        `${API_URL}/api/meals/generate-recipe`,
+        { mealId: mealPlanId, mealType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update the meal plan with the new recipe
+      if (mealPlan) {
+        const updatedMealPlan = { ...mealPlan };
+        updatedMealPlan[mealType as keyof MealPlanResponse] = {
+          ...mealPlan[mealType as keyof MealPlanResponse],
+          recipe: response.data.recipe
+        };
+        setMealPlan(updatedMealPlan);
+      }
+
+      setCurrentRecipe(response.data.recipe);
+      setRecipeModalVisible(true);
+    } catch (error) {
+      console.error("Recipe generation failed:", error);
+      Alert.alert("Error", "Failed to generate recipe. Please try again.");
+    } finally {
+      setGeneratingForMeal(null);
+    }
   };
 
   const RenderSection = ({
@@ -228,33 +282,39 @@ export default function MealPlanScreen() {
     data: string[];
   }) => (
     <View style={styles.detailSection}>
-      <Text style={styles.detailTitle}>{title}:</Text>
+      <Text style={[styles.detailTitle, { color: accentColor }]}>{title}:</Text>
       {data && data.length > 0 ? (
         data.map((item: string, i: number) => (
-          <Text key={i} style={styles.detailItem}>
+          <Text key={i} style={[styles.detailItem, { color: textColor }]}>
             • {item}
           </Text>
         ))
       ) : (
-        <Text style={styles.detailItemEmpty}>No items specified.</Text>
+        <Text style={[styles.detailItemEmpty, { color: secondaryText }]}>
+          No items specified.
+        </Text>
       )}
     </View>
   );
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>Cooking up your meal plan...</Text>
+      <View style={[styles.centered, { backgroundColor: bgColor }]}>
+        <ActivityIndicator size="large" color={primaryColor} />
+        <Text style={[styles.loadingText, { color: textColor }]}>
+          Cooking up your meal plan...
+        </Text>
       </View>
     );
   }
 
   if (!mealPlan) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Oops! No meal plan could be found.</Text>
-        <Text style={styles.errorSubText}>
+      <View style={[styles.centered, { backgroundColor: bgColor }]}>
+        <Text style={[styles.errorText, { color: textColor }]}>
+          Oops! No meal plan could be found.
+        </Text>
+        <Text style={[styles.errorSubText, { color: secondaryText }]}>
           Please ensure your profile is complete.
         </Text>
       </View>
@@ -262,226 +322,396 @@ export default function MealPlanScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <Text style={styles.headerTitle}>Your Daily Meal Plan</Text>
-      {(["Breakfast", "Lunch", "Snack", "Dinner"] as const).map((mealType) => (
-        <View key={mealType} style={styles.mealCard}>
-          <Text style={styles.mealTitle}>{mealType}</Text>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+      <LinearGradient
+        colors={isDark ? ['#065f46', '#064e3b'] : ['#059669', '#047857']}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Your Daily Meal Plan</Text>
+      </LinearGradient>
 
-          <RenderSection title="Foods" data={mealPlan[mealType].Foods} />
-          <RenderSection title="Fruits" data={mealPlan[mealType].Fruits} />
-          <RenderSection
-            title="Drinks/Tea"
-            data={mealPlan[mealType].DrinksOrTea}
-          />
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {(["Breakfast", "Lunch", "Snack", "Dinner"] as const).map((mealType) => {
+          const section = mealPlan[mealType];
+          return (
+            <View
+              key={mealType}
+              style={[styles.mealCard, { backgroundColor: cardBg }]}
+            >
+              <Text style={[styles.mealTitle, { color: primaryColor }]}>
+                {mealType}
+              </Text>
 
-          <View style={styles.detailSection}>
-            <Text style={styles.detailTitle}>Nutrition:</Text>
-            <Text style={styles.detailItem}>
-              {mealPlan[mealType].Nutrition || "Not specified."}
+              <RenderSection title="Foods" data={section.Foods} />
+              <RenderSection title="Fruits" data={section.Fruits} />
+              <RenderSection
+                title="Drinks/Tea"
+                data={section.DrinksOrTea}
+              />
+
+              <View style={styles.detailSection}>
+                <Text style={[styles.detailTitle, { color: accentColor }]}>
+                  Nutrition:
+                </Text>
+                <Text style={[styles.detailItem, { color: textColor }]}>
+                  {section.Nutrition || "Not specified."}
+                </Text>
+              </View>
+
+              <Text style={[styles.costText, { color: secondaryText }]}>
+                Estimated Cost:{" "}
+                <Text style={{ fontWeight: "bold", color: textColor }}>
+                  {section.EstimatedCost || "N/A"}
+                </Text>
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.button, { 
+                  backgroundColor: generatingForMeal === mealType ? "#ccc" : primaryColor 
+                }]}
+                onPress={() => handleGenerateRecipe(mealType)}
+                disabled={!!generatingForMeal}
+              >
+                {generatingForMeal === mealType ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>
+                    {section.recipe ? "View Recipe" : "Generate Recipe"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+        
+        <View style={[styles.summaryCard, { backgroundColor: cardBg }]}>
+          <Text style={[styles.summaryTitle, { color: primaryColor }]}>
+            Daily Summary
+          </Text>
+
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryLabel, { color: secondaryText }]}>
+              Total Calories:{" "}
+            </Text>
+            <Text style={[styles.summaryValue, { color: textColor }]}>
+              {mealPlan.TotalCalories || "N/A"}
             </Text>
           </View>
 
-          <Text style={styles.costText}>
-            Estimated Cost:{" "}
-            <Text style={{ fontWeight: "bold" }}>
-              {mealPlan[mealType].EstimatedCost || "N/A"}
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryLabel, { color: secondaryText }]}>
+              Estimated Cost:{" "}
             </Text>
-          </Text>
+            <Text style={[styles.summaryValue, { color: textColor }]}>
+              {mealPlan.TotalEstimatedCost || "N/A"}
+            </Text>
+          </View>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() =>
-              handleGenerateRecipe(mealType, mealPlan[mealType].Foods)
-            }
-          >
-            <Text style={styles.buttonText}>Generate Recipe</Text>
-          </TouchableOpacity>
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryLabel, { color: secondaryText }]}>
+              Water Intake:{" "}
+            </Text>
+            <Text style={[styles.summaryValue, { color: textColor }]}>
+              {mealPlan.WaterIntakeLiters || "N/A"} liters
+            </Text>
+          </View>
+
+          {mealPlan.Notes && (
+            <View style={styles.notesSection}>
+              <Text style={[styles.summaryLabel, { color: secondaryText }]}>
+                Notes:
+              </Text>
+              <Text style={[styles.notesText, { color: textColor }]}>
+                {mealPlan.Notes}
+              </Text>
+            </View>
+          )}
         </View>
-      ))}
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Daily Summary</Text>
+      </ScrollView>
 
-        <Text style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Calories: </Text>
-          <Text style={styles.summaryValue}>
-            {mealPlan.TotalCalories || "N/A"}
-          </Text>
-        </Text>
+      {/* Recipe Modal */}
+      <Modal
+        visible={recipeModalVisible}
+        animationType="slide"
+        onRequestClose={() => setRecipeModalVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: bgColor }]}>
+          <LinearGradient
+            colors={isDark ? ['#065f46', '#064e3b'] : ['#059669', '#047857']}
+            style={styles.modalHeader}
+          >
+            <Text style={styles.modalTitle}>
+              {currentMealType} Recipe: {currentRecipe?.title}
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setRecipeModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </LinearGradient>
 
-        <Text style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Estimated Cost: </Text>
-          <Text style={styles.summaryValue}>
-            {mealPlan.TotalEstimatedCost || "N/A"}
-          </Text>
-        </Text>
+          {currentRecipe ? (
+            <ScrollView style={styles.modalContent}>
+              <View style={styles.ingredientsSection}>
+                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                  Ingredients
+                </Text>
+                {currentRecipe.ingredients.map((ingredient, index) => (
+                  <Text 
+                    key={index} 
+                    style={[styles.ingredientItem, { color: textColor }]}
+                  >
+                    • {ingredient}
+                  </Text>
+                ))}
+              </View>
 
-        <Text style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Water Intake: </Text>
-          <Text style={styles.summaryValue}>
-            {mealPlan.WaterIntakeLiters || "N/A"}
-          </Text>
-        </Text>
-
-        {mealPlan.Notes && (
-          <View style={styles.notesSection}>
-            <Text style={styles.summaryLabel}>Notes:</Text>
-            <Text style={styles.notesText}>{mealPlan.Notes}</Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+              <View style={styles.stepsSection}>
+                <Text style={[styles.sectionTitle, { color: primaryColor }]}>
+                  Steps
+                </Text>
+                {currentRecipe.steps.map((step, index) => (
+                  <View key={index} style={styles.stepItem}>
+                    <Text style={[styles.stepNumber]} className="text-foreground">
+                      {index + 1} .
+                    </Text>
+                    <Text style={[styles.stepText, { color: textColor }]}>
+                      {step}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : (
+            <View style={styles.centeredModal}>
+              <ActivityIndicator size="large" color={primaryColor} />
+              <Text style={[styles.loadingText, { color: textColor }]}>
+                Loading recipe...
+              </Text>
+            </View>
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }
 
-// --- STYLES ---
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f0f4f8",
-  },
-  contentContainer: {
-    padding: 16,
-    paddingTop: 80, // For notch
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: "#333",
-  },
-  errorText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#d32f2f",
-  },
-  errorSubText: {
-    fontSize: 16,
-    marginTop: 8,
-    textAlign: "center",
-    color: "#555",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#1b5e20",
-    marginBottom: 24,
-  },
-  mealCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  mealTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#2e7d32",
-    marginBottom: 16,
-  },
-  detailSection: {
-    marginBottom: 10,
-  },
-  detailTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#37474f",
-    marginBottom: 4,
-  },
-  detailItem: {
-    fontSize: 15,
-    color: "#455a64",
-    marginLeft: 8,
-    lineHeight: 22,
-  },
-  detailItemEmpty: {
-    fontSize: 14,
-    color: "#78909c",
-    marginLeft: 8,
-    fontStyle: "italic",
-  },
-  costText: {
-    fontSize: 14,
-    fontStyle: "italic",
-    color: "#546e7a",
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#43a047",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    padding: 15,
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#333",
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 5, // Add some space between lines
-  },
-  summaryItem: {
-    marginBottom: 10, // adds spacing between each line
-    lineHeight: 22,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#37474f",
-  },
-  summaryValue: {
-    fontSize: 15,
-    color: "#2e7d32",
-  },
-
-  notesSection: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    paddingTop: 10,
-  },
-  notesText: {
-    fontSize: 13, // Even smaller for notes
-    color: "#666",
-    lineHeight: 18,
-  },
-});
+const createStyles = (isDark: boolean) =>
+  StyleSheet.create({
+    // ... (previous styles remain the same)
+    container: {
+      flex: 1,
+    },
+    header: {
+      height: 180,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: 50,
+      paddingHorizontal: 20,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20
+    },
+    headerTitle: {
+      fontSize: 28,
+      fontWeight: "bold",
+      color: "white",
+      textAlign: "center",
+    },
+    contentContainer: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    centered: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 18,
+    },
+    errorText: {
+      fontSize: 20,
+      fontWeight: "bold",
+      textAlign: "center",
+    },
+    errorSubText: {
+      fontSize: 16,
+      marginTop: 8,
+      textAlign: "center",
+    },
+    mealCard: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.1 : 0.05,
+      shadowRadius: 8,
+      elevation: isDark ? 3 : 5,
+    },
+    mealTitle: {
+      fontSize: 22,
+      fontWeight: "bold",
+      marginBottom: 16,
+    },
+    detailSection: {
+      marginBottom: 10,
+    },
+    detailTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 4,
+    },
+    detailItem: {
+      fontSize: 15,
+      marginLeft: 8,
+      lineHeight: 22,
+    },
+    detailItemEmpty: {
+      fontSize: 14,
+      marginLeft: 8,
+      fontStyle: "italic",
+    },
+    costText: {
+      fontSize: 14,
+      fontStyle: "italic",
+      marginTop: 8,
+      marginBottom: 16,
+    },
+    button: {
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    buttonText: {
+      color: "#ffffff",
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    summaryCard: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.1 : 0.05,
+      shadowRadius: 8,
+      elevation: isDark ? 3 : 5,
+    },
+    summaryTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 16,
+    },
+    summaryItem: {
+      marginBottom: 12,
+      flexDirection: "row",
+    },
+    summaryLabel: {
+      fontSize: 15,
+      fontWeight: "600",
+    },
+    summaryValue: {
+      fontSize: 15,
+      fontWeight: "500",
+    },
+    notesSection: {
+      marginTop: 15,
+      paddingTop: 15,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? "#334155" : "#e2e8f0",
+    },
+    notesText: {
+      fontSize: 14,
+      lineHeight: 20,
+      marginTop: 5,
+    },
+    // New modal styles
+    modalContainer: {
+      flex: 1,
+    },
+    modalHeader: {
+      height: 200,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: 40,
+      paddingHorizontal: 20,
+      flexDirection: "row",
+    },
+    modalTitle: {
+      fontSize: 22,
+      fontWeight: "bold",
+      color: "white",
+      textAlign: "center",
+      flex: 1,
+    },
+    closeButton: {
+      position: "absolute",
+      right: 20,
+      top: 50,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    closeButtonText: {
+      color: "white",
+      fontSize: 24,
+      fontWeight: "bold",
+    },
+    modalContent: {
+      flex: 1,
+      padding: 20,
+    },
+    centeredModal: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    ingredientsSection: {
+      marginBottom: 25,
+    },
+    stepsSection: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 15,
+    },
+    ingredientItem: {
+      fontSize: 16,
+      marginLeft: 10,
+      marginBottom: 8,
+      lineHeight: 22,
+    },
+    stepItem: {
+      flexDirection: "row",
+      marginBottom: 15,
+      alignItems: "flex-start",
+    },
+    stepNumber: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 10,
+      marginTop: 3,
+    },
+    stepText: {
+      fontSize: 16,
+      flex: 1,
+      lineHeight: 22,
+    },
+  });

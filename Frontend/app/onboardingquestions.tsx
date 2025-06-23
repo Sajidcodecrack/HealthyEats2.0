@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
   TextInput,
   Image,
@@ -15,10 +14,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { User, ChevronRight, ChevronLeft } from "lucide-react-native";
-import { getToken } from "../lib/tokenManager"; // Adjust the import path as necessary
+import { ChevronRight, ChevronLeft } from "lucide-react-native";
+import { getToken } from "../lib/tokenManager";
 
-// --- Data for the Healthy Life App (Personal Info Focused) ---
 const onboardingSteps = [
   {
     id: 1,
@@ -54,31 +52,24 @@ const genders = [
   { id: "male", title: "Male" },
   { id: "female", title: "Female" },
 ];
-// --- End of Data ---
 
 export default function Onboarding() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
-
   const [age, setAge] = useState("");
-  // Removed heightCm as it's no longer needed for storage
   const [heightFeet, setHeightFeet] = useState("");
   const [heightInches, setHeightInches] = useState("");
   const [weight, setWeight] = useState("");
   const [gender, setGender] = useState("");
-  // Explicitly type userId and userToken as string | null
   const [userId, setUserId] = useState<string | null>(null);
   const [userToken, setUserToken] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(false);
-
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
-  // Fetch user data from storage when the component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       const storedUserId = await AsyncStorage.getItem("userId");
-      const token = await getToken(); // Get token from SecureStore
+      const token = await getToken();
       setUserId(storedUserId);
       setUserToken(token);
 
@@ -87,8 +78,6 @@ export default function Onboarding() {
           "Authentication Error",
           "User not found. Please log in again."
         );
-        // Optional: Redirect to login
-        // router.replace('/login');
       }
     };
     fetchUserData();
@@ -102,15 +91,6 @@ export default function Onboarding() {
       );
       return;
     }
-
-    // Removed height conversion logic from handleNext as height is now stored in feet/inches
-    // if (onboardingSteps[currentStep].content === "Height") {
-    //   const feet = parseFloat(heightFeet) || 0;
-    //   const inches = parseFloat(heightInches) || 0;
-    //   const totalInches = feet * 12 + inches;
-    //   const convertedCm = totalInches * 2.54;
-    //   setHeightCm(convertedCm.toFixed(2));
-    // }
 
     if (currentStep < onboardingSteps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -137,20 +117,15 @@ export default function Onboarding() {
       return;
     }
 
-    // This payload is structured to match your backend API
     const onboardingData = {
       userId: userId,
       age: parseInt(age, 10),
       gender: gender,
-      heightFeet: parseInt(heightFeet, 10), // Send feet directly
-      heightInches: parseInt(heightInches, 10), // Send inches directly
+      heightFeet: parseInt(heightFeet, 10),
+      heightInches: parseInt(heightInches, 10),
       weight: parseFloat(weight),
-      // Add units if your backend schema requires them, otherwise they can be omitted
-      // heightUnit: "ft/in", // Removed as per schema
       weightUnit: "kg",
     };
-
-    console.log("Submitting onboarding data:", onboardingData);
 
     if (!API_URL) {
       Alert.alert(
@@ -162,13 +137,10 @@ export default function Onboarding() {
     }
 
     try {
-      // Corrected API endpoint
       const response = await fetch(`${API_URL}/api/user-profile/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Your backend expects a userId in the body, but if it's protected by auth middleware,
-          // you should send the token. The backend will get the userId from the token.
           Authorization: `Bearer ${userToken}`,
         },
         body: JSON.stringify(onboardingData),
@@ -178,7 +150,7 @@ export default function Onboarding() {
 
       if (response.ok) {
         await AsyncStorage.setItem("hasCompletedOnboarding", "true");
-        router.replace({ pathname: "/(tabs)" });
+        router.replace({ pathname: "/home" });
       } else {
         Alert.alert(
           "Onboarding Failed",
@@ -235,29 +207,27 @@ export default function Onboarding() {
     switch (step.content) {
       case "Age":
         return (
-          <View style={styles.stepContent}>
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel} className="text-foreground">Your Age</Text>
+              <Text className="text-foreground py-2 text-lg font-bold">Your Age</Text>
               <TextInput
                 style={styles.textInput}
+                className="text-foreground"
                 placeholder="e.g., 30"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="numeric"
                 value={age}
                 onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ""))}
                 maxLength={3}
                 returnKeyType="done"
                 blurOnSubmit={true}
-                className="bg-background border border-gray-500 text-foreground"
               />
             </View>
-          </View>
         );
 
       case "Gender":
         return (
-          <View style={styles.stepContent}>
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel} className="text-foreground">Select Your Gender</Text>
+              <Text className="text-foreground py-2 text-lg font-bold">Select Your Gender</Text>
               <View style={styles.genderOptionsContainer}>
                 {genders.map((g) => (
                   <TouchableOpacity
@@ -281,18 +251,18 @@ export default function Onboarding() {
                 ))}
               </View>
             </View>
-          </View>
         );
 
       case "Height":
         return (
-          <View style={styles.stepContent}>
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel} className="text-foreground">Height</Text>
+              <Text className="text-foreground py-2 text-lg font-bold">Height</Text>
               <View style={styles.heightInputContainer}>
                 <TextInput
                   style={[styles.textInput, styles.heightInputHalf]}
-                  placeholder="Feet (e.g., 5)"
+                  className="text-foreground"
+                  placeholder="Feet"
+                  placeholderTextColor="#9CA3AF"
                   keyboardType="numeric"
                   value={heightFeet}
                   onChangeText={(text) =>
@@ -301,17 +271,17 @@ export default function Onboarding() {
                   maxLength={1}
                   returnKeyType="done"
                   blurOnSubmit={true}
-                  className="border border-gray-500 text-foreground"
                 />
-                <Text style={styles.heightUnitLabel} className="text-foreground">ft</Text>
+                <Text style={styles.heightUnitLabel}>ft</Text>
                 <TextInput
-                  className="border border-gray-500 text-foreground"
                   style={[
                     styles.textInput,
                     styles.heightInputHalf,
                     { marginLeft: 10 },
                   ]}
+                   className="text-foreground"
                   placeholder="Inches"
+                  placeholderTextColor="#9CA3AF"
                   keyboardType="numeric"
                   value={heightInches}
                   onChangeText={(text) => {
@@ -329,29 +299,27 @@ export default function Onboarding() {
                   returnKeyType="done"
                   blurOnSubmit={true}
                 />
-                <Text style={styles.heightUnitLabel} className="text-foreground">in</Text>
+                <Text style={styles.heightUnitLabel}>in</Text>
               </View>
             </View>
-          </View>
         );
 
       case "Weight":
         return (
-          <View style={styles.stepContent}>
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel} className="text-foreground">Weight (kg)</Text>
+              <Text  className="text-foreground py-2 text-lg font-bold">Weight (kg)</Text>
               <TextInput
                 style={styles.textInput}
+                className="text-foreground"
                 placeholder="e.g., 70.2"
+                placeholderTextColor="#9CA3AF"
                 keyboardType="decimal-pad"
                 value={weight}
                 onChangeText={(text) => setWeight(text.replace(/[^0-9.]/g, ""))}
                 returnKeyType="done"
                 blurOnSubmit={true}
-                className="bg-background border border-gray-500 text-foreground"
               />
             </View>
-          </View>
         );
 
       default:
@@ -362,86 +330,93 @@ export default function Onboarding() {
   const step = onboardingSteps[currentStep];
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.container} className="bg-background">
-        <LinearGradient colors={["#934925", "#F97C3E"]} style={styles.header}>
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${
-                      ((currentStep + 1) / onboardingSteps.length) * 100
-                    }%`,
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.progressText}>
-              {currentStep + 1} of {onboardingSteps.length}
-            </Text>
-          </View>
-          <View style={styles.stepHeader}>
-            {/* Icon rendering can be placed here */}
-            <Image
-              source={require("../assets/images/IconTransparent.png")}
-              style={{ width: 120, height: 120}}
-              resizeMode="contain"
+    <View style={styles.container} className="bg-white dark:bg-gray-900">
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={["#065f46", "#059669"]}
+        style={styles.backgroundGradient}
+      />
+      
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Image
+          source={require("../assets/images/IconTransparent.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${
+                    ((currentStep + 1) / onboardingSteps.length) * 100
+                  }%`,
+                },
+              ]}
             />
-            <Text style={styles.stepTitle}>{step.title}</Text>
-            <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
           </View>
-        </LinearGradient>
-
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={styles.scrollContentWrapper}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-        >
-          {renderStepContent()}
-        </ScrollView>
-
-        <View style={styles.navigation} className="bg-background">
-          {currentStep > 0 && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7}
-            >
-              <ChevronLeft size={20} color="#6B7280" />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !canProceed() && styles.disabledButton,
-              currentStep === 0 && styles.fullWidthButton,
-            ]}
-            onPress={handleNext}
-            disabled={!canProceed() || loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <>
-                <Text style={styles.nextButtonText}>
-                  {currentStep === onboardingSteps.length - 1
-                    ? "Get Started"
-                    : "Continue"}
-                </Text>
-                {currentStep < onboardingSteps.length - 1 && (
-                  <ChevronRight size={20} color="#FFF" />
-                )}
-              </>
-            )}
-          </TouchableOpacity>
+          <Text style={styles.progressText}>
+            {currentStep + 1} of {onboardingSteps.length}
+          </Text>
         </View>
         
+        <View style={styles.stepHeader}>
+          <Text style={styles.stepTitle}>{step.title}</Text>
+          <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
+        </View>
+      </View>
+
+      {/* Content */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContentWrapper}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {renderStepContent()}
+      </ScrollView>
+
+      {/* Navigation */}
+      <View style={styles.navigation}>
+        {currentStep > 0 && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <ChevronLeft size={20} color="#065f46" />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !canProceed() && styles.disabledButton,
+            currentStep === 0 && styles.fullWidthButton,
+          ]}
+          onPress={handleNext}
+          disabled={!canProceed() || loading}
+          activeOpacity={0.8}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>
+                {currentStep === onboardingSteps.length - 1
+                  ? "Get Started"
+                  : "Continue"}
+              </Text>
+              {currentStep < onboardingSteps.length - 1 && (
+                <ChevronRight size={20} color="#FFF" />
+              )}
+            </>
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -451,43 +426,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+  },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 60, // Adjust for status bar
+    paddingTop: 60,
     paddingBottom: 32,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 16,
   },
   progressContainer: {
-    marginBottom: 32,
+    width: '100%',
+    marginBottom: 24,
   },
   progressBar: {
-    height: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 3,
     marginBottom: 8,
   },
   progressFill: {
     height: "100%",
     backgroundColor: "#FFF",
-    borderRadius: 2,
+    borderRadius: 3,
   },
   progressText: {
     fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+    color: "#FFF",
     textAlign: "center",
+    fontWeight: '600',
   },
   stepHeader: {
     alignItems: "center",
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
   },
   stepTitle: {
     fontSize: 24,
@@ -498,12 +479,13 @@ const styles = StyleSheet.create({
   },
   stepSubtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
     lineHeight: 24,
   },
   content: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContentWrapper: {
     flexGrow: 1,
@@ -512,56 +494,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   stepContent: {
-    // This view just needs to wrap its children.
-  },
-  welcomeContainer: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  welcomeText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  optionsContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  optionCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-  },
-  selectedOption: {
-    borderColor: "#10B981",
-    backgroundColor: "#F0FDF4",
-  },
-  optionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  selectedOptionText: {
-    color: "#065F46",
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  selectedOptionDescription: {
-    color: "#047857",
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   inputSection: {
     width: "100%",
@@ -570,18 +510,19 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 12,
+    color: '#065f46',
   },
   textInput: {
     borderRadius: 32,
     padding: 16,
     fontSize: 18,
     borderWidth: 1,
+    borderColor: '#9CA3AF'
   },
   heightInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
   },
   heightInputHalf: {
     flex: 1,
@@ -590,35 +531,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginLeft: 8,
     marginRight: 8,
+    color: '#065f46',
+    fontWeight: '600',
   },
   genderOptionsContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
     marginTop: 10,
   },
   genderOptionButton: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 16,
+    paddingVertical: 20,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#d1fae5",
     marginBottom: 10,
     width: "48%",
     alignItems: "center",
   },
   selectedGenderOption: {
-    borderColor: "#FFB078",
-    backgroundColor: "#FAF2DD",
+    borderColor: "#059669",
+    backgroundColor: "#d1fae5",
   },
   genderOptionText: {
     fontSize: 16,
-    color: "#4B5563",
+    color: "#065f46",
   },
   selectedGenderOptionText: {
-    color: "#0F100F",
-    fontWeight: "600",
+    color: "#065f46",
+    fontWeight: "bold",
   },
   navigation: {
     flexDirection: "row",
@@ -633,14 +575,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: 32,
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#d1fae5",
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "#065f46",
     marginLeft: 4,
   },
   nextButton: {
@@ -648,34 +590,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F97C3E",
+    backgroundColor: "#059669",
     borderRadius: 32,
     paddingVertical: 16,
     paddingHorizontal: 20,
+    shadowColor: '#065f46',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  fullWidthButton: {
-    // This style is now redundant since back button is hidden,
-    // but kept for clarity in case the logic changes.
-    // The `flex: 1` on `nextButton` already handles this.
-  },
+  fullWidthButton: {},
   disabledButton: {
-    backgroundColor: "#A1A1AA",
-    opacity: 1,
+    backgroundColor: "#a8a29e",
   },
   nextButtonText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFF",
     marginRight: 4,
-  },
-  loginButton: {
-    alignItems: 'center',
-    paddingBottom: Platform.OS === "ios" ? 20 : 10,
-    paddingHorizontal: 24,
-  },
-  loginButtonText: {
-    color: '#F97C3E',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });

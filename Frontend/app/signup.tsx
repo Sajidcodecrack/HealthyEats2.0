@@ -9,150 +9,127 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator, // Import ActivityIndicator for loading state
+  ActivityIndicator,
+  StyleSheet,
+  TextInput,
+  Animated as RNAnimated,
 } from "react-native";
-import { Checkbox } from "../~/components/ui/checkbox"; // Assuming this is your reusable Checkbox
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Input } from "../~/components/ui/input";
-import Constants from 'expo-constants';
-import { saveToken } from "../lib/tokenManager"; // Ensure this path is correct
+import Constants from "expo-constants";
+import { saveToken } from "../lib/tokenManager";
 import { LinearGradient } from "expo-linear-gradient";
+
+// 🔥 Reanimated
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  FadeInDown,
+  FadeIn,
+  Easing,
+} from "react-native-reanimated";
+
 const Signup: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [keepSignedIn, setKeepSignedIn] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
-
-  const [loading, setLoading] = useState(false); // To show loading state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const isWeb = Platform.OS === 'web';
+  const isWeb = Platform.OS === "web";
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
-  useEffect(() => {
-    if (!isWeb) {
-      const keyboardDidShowListener = Keyboard.addListener(
-        Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-        () => setKeyboardVisible(true)
-      );
-      const keyboardDidHideListener = Keyboard.addListener(
-        Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-        () => setKeyboardVisible(false)
-      );
+  // 🔥 Reanimated SharedValue
+  const formOffset = useSharedValue(0);
+  const formPadding = useSharedValue(24);
 
-      return () => {
-        keyboardDidShowListener.remove();
-        keyboardDidHideListener.remove();
-      };
-    }
-  }, [isWeb]);
+  useEffect(() => {
+    const keyboardShow =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const keyboardHide =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(keyboardShow, () => {
+      setKeyboardVisible(true);
+      formOffset.value = withTiming(-100, {
+        duration: 300,
+        easing: Easing.inOut(Easing.ease),
+      });
+    });
+
+    const hideSubscription = Keyboard.addListener(keyboardHide, () => {
+      setKeyboardVisible(false);
+      formOffset.value = withTiming(0, {
+        duration: 300,
+        easing: Easing.inOut(Easing.ease),
+      });
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const animatedFormStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: formOffset.value }],
+  }));
+
+  const formContainerStyle = useAnimatedStyle(() => ({
+    paddingTop: formPadding.value,
+  }));
 
   const handleSignup = async (): Promise<void> => {
-    // Dismiss keyboard on non-web platforms
-    if (!isWeb) {
-      Keyboard.dismiss();
-    }
-    setError(''); // Clear previous errors
-    setLoading(true); // Set loading to true
+    if (!isWeb) Keyboard.dismiss();
+    setError("");
+    setLoading(true);
 
-    // Client-side validation
-    if (!fullName.trim()) {
-      setError('Please enter your full name');
-      setLoading(false);
-      return;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email');
-      setLoading(false);
-      return;
-    }
-    if (!password) {
-      setError('Please enter a password');
-      setLoading(false);
-      return;
-    }
-    if (!confirmPassword) {
-      setError('Please confirm your password');
-      setLoading(false);
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setLoading(false);
-      return;
-    }
+    // validations...
+    if (!fullName.trim())
+      return setError("Please enter your full name"), setLoading(false);
+    if (!email.trim())
+      return setError("Please enter your email"), setLoading(false);
+    if (!password)
+      return setError("Please enter a password"), setLoading(false);
+    if (!confirmPassword)
+      return setError("Please confirm your password"), setLoading(false);
+    if (password !== confirmPassword)
+      return setError("Passwords do not match"), setLoading(false);
+    if (password.length < 6)
+      return (
+        setError("Password must be at least 6 characters"), setLoading(false)
+      );
 
-    // Email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
-      setLoading(false);
-      return;
-    }
-
-    if (!API_URL) {
-      setError('API URL is not configured. Please check your app.json/app.config.js.');
-      setLoading(false);
-      return;
-    }
+    if (!emailRegex.test(email))
+      return setError("Please enter a valid email"), setLoading(false);
+    if (!API_URL) return setError("API URL not configured."), setLoading(false);
 
     try {
       const response = await fetch(`${API_URL}/api/user/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: fullName,
-          email: email,
-          password: password,
-        }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password }),
       });
 
       const data = await response.json();
-
       if (response.ok) {
-        // If registration is successful, assume backend returns token and userId
-        if (data.token) {
-          await saveToken(data.token); // Save the received token
-        } else {
-          // Handle case where token is not returned (e.g., backend only confirms registration)
-          // You might want to automatically log the user in here if your backend has a /login endpoint
-          console.warn('Registration successful but no token received. User might need to log in manually.');
-          // Potentially redirect to login screen instead of onboardingquestions
-          // router.replace({ pathname: '/signin' });
-          // return;
-        }
-
-        if (data.userId) {
-          await AsyncStorage.setItem('userId', data.userId); // Save the user ID
-        } else {
-            console.warn('No userId received during registration.');
-        }
-
-        // IMPORTANT: Do NOT set 'hasCompletedOnboarding' to 'true' here.
-        // That flag should only be set AFTER the user completes the onboarding questions.
-        // The _layout.tsx will correctly redirect to onboardingquestions
-        // because 'hasCompletedOnboarding' will be null or 'false'.
-
-        router.replace({ pathname: '/onboardingquestions' }); // Navigate to onboarding questions
+        if (data.token) await saveToken(data.token);
+        if (data.userId) await AsyncStorage.setItem("userId", data.userId);
+        router.replace("/onboardingquestions");
       } else {
-        // Backend returns msg for errors (e.g., 'Email already registered.')
-        setError(data?.msg || 'Registration failed. Please try again.');
+        setError(data?.msg || "Registration failed. Try again.");
       }
-    } catch (error) {
-      console.error('Error during signup:', error);
-      setError('An unexpected error occurred. Please check your connection and try again.');
+    } catch (err) {
+      setError("Unexpected error occurred.");
     } finally {
-      setLoading(false); // Always set loading to false after the operation
+      setLoading(false);
     }
   };
 
@@ -160,45 +137,47 @@ const Signup: React.FC = () => {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1"
-      keyboardVerticalOffset={0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
-          className="flex-1 bg-background dark:bg-dark-background"
-          contentContainerStyle={{
-            flexGrow: 1,
-            backgroundColor: "transparent",
-          }}
+          className="flex-1 bg-background dark:bg-gray-900"
+          contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Header Section */}
           <LinearGradient
-            colors={["#934925", "#F97C3E"]}
+            colors={["#065f46", "#059669"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={{
               alignItems: "center",
-              paddingTop: keyboardVisible ? 16 : 32,
-              paddingBottom: keyboardVisible ? 16 : 48,
-              paddingHorizontal: 24,
-              flexDirection: "column",
               justifyContent: "center",
-              flex: 1,
+              height: 200,
             }}
           >
             {!keyboardVisible && (
-              <Image
-                source={require("../assets/images/IconTransparent.png")}
-                style={{ width: 130, height: 130 }}
-                resizeMode="contain"
-              />
+              <View>
+                <Image
+                  source={require("../assets/images/IconTransparent.png")}
+                  style={{ width: 120, height: 120 }}
+                  resizeMode="contain"
+                />
+              </View>
             )}
           </LinearGradient>
-          <View className="h-8 bg-background dark:bg-dark-background fixed bottom-7 rounded-t-[32px]"></View>
+
           {/* Form Container */}
-          <View className="flex-1 px-6 -mt-5 bg-background dark:bg-dark-background rounded-t-[32px]">
-            <Text className="text-black dark:text-white text-2xl font-extrabold text-center mb-6">
-              Create An Account
-            </Text>
+          <Animated.View
+            style={[formContainerStyle, animatedFormStyle]}
+            className="px-6 pt-8 bg-background dark:bg-gray-900 rounded-t-[32px] -mt-8"
+          >
+            <Animated.Text
+              entering={FadeInDown.delay(100)}
+              className="text-foreground dark:text-white text-3xl font-bold text-center mb-6"
+            >
+              Welcome
+            </Animated.Text>
 
             {error ? (
               <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
@@ -208,107 +187,84 @@ const Signup: React.FC = () => {
               </View>
             ) : null}
 
-            <View className="space-y-2">
-              <View>
-                <Text className="text-black dark:text-white text-sm font-medium mb-1 ml-1">
-                  Full Name
-                </Text>
-                <Input
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChangeText={setFullName}
-                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
+            {/* Inputs */}
+            {[
+              ["Full name", fullName, setFullName, <User color="#059669" />],
+              ["Email address", email, setEmail, <Mail color="#059669" />],
+              ["Password", password, setPassword, <Lock color="#059669" />],
+              [
+                "Confirm password",
+                confirmPassword,
+                setConfirmPassword,
+                <Lock color="#059669" />,
+              ],
+            ].map(([label, value, setter, icon], i) => (
+              <Animated.View
+                key={i}
+                entering={FadeInDown.delay(100 + i * 100)}
+                style={styles.inputWrapper}
+              >
+                <View className="p-2">{icon}</View>
+                <TextInput
+                  className="text-foreground"
+                  style={styles.input}
+                  placeholder={label}
+                  placeholderTextColor="#9CA3AF"
+                  value={value as string}
+                  onChangeText={setter as (text: string) => void}
+                  secureTextEntry={
+                    label === "Password"
+                      ? !showPassword
+                      : label === "Confirm password"
+                      ? !showConfirmPassword
+                      : false
+                  }
                   autoCapitalize="none"
-                  textContentType="name"
-                  returnKeyType="next"
                 />
-              </View>
+                {(label === "Password" || label === "Confirm password") && (
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() =>
+                      label === "Password"
+                        ? setShowPassword(!showPassword)
+                        : setShowConfirmPassword(!showConfirmPassword)
+                    }
+                  >
+                    {(
+                      label === "Password" ? showPassword : showConfirmPassword
+                    ) ? (
+                      <EyeOff size={20} color="#059669" />
+                    ) : (
+                      <Eye size={20} color="#059669" />
+                    )}
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            ))}
 
-              <View>
-                <Text className="text-black dark:text-white text-sm font-medium mb-1 ml-1">
-                  Email Address
-                </Text>
-                <Input
-                  placeholder="Enter your email"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  textContentType="emailAddress"
-                  autoComplete="off"
-                  returnKeyType="next"
-                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
-                />
-              </View>
-
-              <View>
-                <Text className="text-black dark:text-white text-sm font-medium mb-1 ml-1">
-                  Password
-                </Text>
-                <Input
-                  placeholder="Create a password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  textContentType="newPassword"
-                  autoComplete="off"
-                  returnKeyType="next"
-                  className="px-6 py-4 mb-4 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
-                />
-              </View>
-
-              <View>
-                <Text className="text-black dark:text-white text-sm font-medium mb-1 ml-1">
-                  Confirm Password
-                </Text>
-                <Input
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  textContentType="newPassword"
-                  autoComplete="off"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignup}
-                  className="px-6 py-4 mb-2 border border-gray-400 rounded-full text-black dark:text-white bg-transparent focus:border-primary"
-                />
-              </View>
+            <View style={styles.termsContainer}>
+              <Text style={styles.termsText}>
+                By creating an account, you agree to our{" "}
+                <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
+                <Text style={styles.termsLink}>Privacy Policy</Text>
+              </Text>
             </View>
 
-            {/* Keep Signed In Checkbox */}
-            <TouchableOpacity
-              onPress={() => setKeepSignedIn(!keepSignedIn)}
-              className="flex-row items-center my-2 mb-3"
-              activeOpacity={1}
-            >
-              <Checkbox
-                checked={keepSignedIn}
-                onCheckedChange={setKeepSignedIn}
-                className="h-5 w-5"
-              />
-              <Text className="text-black dark:text-white ml-2 text-base">
-                Keep me signed in
-              </Text>
-            </TouchableOpacity>
-
-            {/* Sign Up Button */}
             <TouchableOpacity
               onPress={handleSignup}
-              className="bg-primary py-4 px-6 rounded-full items-center "
+              className="bg-emerald-600 dark:bg-emerald-700 py-5 px-6 rounded-full items-center justify-center"
               activeOpacity={0.9}
-              style={
-                {
-                  shadowColor: "#FF6200",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 4,
-                  elevation: 4,
-                } as const
-              }
-              disabled={loading} // Disable button when loading
+              disabled={loading}
+              style={{
+                shadowColor: "#065f46",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 6,
+                elevation: 6,
+              }}
             >
               {loading ? (
-                <ActivityIndicator color="#FFFFFF" /> // Show spinner when loading
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text className="text-white text-base font-bold">
                   Create Account
@@ -316,24 +272,69 @@ const Signup: React.FC = () => {
               )}
             </TouchableOpacity>
 
-            {/* Sign In Link - Only show when keyboard is not visible */}
             {!keyboardVisible && (
-              <TouchableOpacity
-                onPress={() => router.push("/login")} // Ensure this points to your signin path
-                className="py-4"
-                activeOpacity={0.7}
-              >
-                <Text className="text-center text-black dark:text-white text-base">
-                  Already have an account?{" "}
-                  <Text className="text-[#FF6200] font-semibold">Sign In</Text>
-                </Text>
-              </TouchableOpacity>
+              <Animated.View entering={FadeIn.delay(400)}>
+                <TouchableOpacity
+                  onPress={() => router.push("/login")}
+                  className="mt-6"
+                >
+                  <Text className="text-center text-foreground dark:text-white text-base">
+                    Already have an account?{" "}
+                    <Text className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      Sign In
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             )}
-          </View>
+          </Animated.View>
         </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#9CA3AF",
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "Inter-Regular",
+   
+    paddingVertical: 16,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 16,
+    padding: 4,
+  },
+  termsContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  termsText: {
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: "#059669",
+    fontFamily: "Inter-SemiBold",
+  },
+});
 
 export default Signup;

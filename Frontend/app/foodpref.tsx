@@ -1,21 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
   TextInput,
   ScrollView,
   Switch,
-  TouchableOpacity, // Use TouchableOpacity for custom buttons
+  TouchableOpacity,
   Alert,
   ActivityIndicator,
-  useColorScheme, // To detect dark/light mode
-  StyleSheet, // For potential specific styles not covered by Tailwind
+  useColorScheme,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
-import { useRouter } from "expo-router";  
-// You might want to define types for your preferences
+import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  SlideInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+
+const { height } = Dimensions.get("window");
+
 interface FoodPreferences {
   foodTypes: string[];
   allergies: string[];
@@ -31,258 +46,455 @@ export default function FoodPrefScreen() {
   const isDark = colorScheme === "dark";
 
   const [loading, setLoading] = useState(true);
-  const [prefs, setPrefs] = useState<FoodPreferences | null>(null); // Type the state
+  const [prefs, setPrefs] = useState<FoodPreferences | null>(null);
   const [userId, setUserId] = useState("");
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // Form states - Initialize with empty strings or default values
+  // Form states
   const [foodTypes, setFoodTypes] = useState<string>("");
   const [allergies, setAllergies] = useState<string>("");
   const [medicalConditions, setMedicalConditions] = useState<string>("");
   const [diabeticRange, setDiabeticRange] = useState<string>("");
   const [pregnancyStatus, setPregnancyStatus] = useState<boolean>(false);
-  const [budget, setBudget] = useState<string>(""); // Keep as string for TextInput
+  const [budget, setBudget] = useState<string>("");
 
-  // Fetch userId and preferences on mount
+  // Animation values
+  const formOpacity = useSharedValue(0);
+  const formTranslateY = useSharedValue(30);
+
+  const animatedFormStyle = useAnimatedStyle(() => {
+    return {
+      opacity: formOpacity.value,
+      transform: [{ translateY: formTranslateY.value }],
+    };
+  });
+
   useEffect(() => {
-  const loadPreferences = async () => {
+    // Animate form in when loading completes
+    if (!loading) {
+      formOpacity.value = withSpring(1, { damping: 10 });
+      formTranslateY.value = withSpring(0, { damping: 10 });
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem("userId");
+        if (!storedUserId) {
+          Alert.alert("Error", "User ID not found. Please login again.");
+          return;
+        }
+
+        setUserId(storedUserId);
+
+        const res = await axios.get<FoodPreferences>(
+          `${API_URL}/api/foodPreferences/${storedUserId}`
+        );
+
+        if (res.data) {
+          await AsyncStorage.setItem("foodPrefs", JSON.stringify(res.data));
+          router.replace("/mealplan");
+          return;
+        }
+      } catch (err) {
+        console.log("No existing preferences found or fetch error.", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, []);
+
+  const handleSubmitAndGenerate = async () => {
+    if (
+      !foodTypes ||
+      !allergies ||
+      !medicalConditions ||
+      !diabeticRange ||
+      !budget
+    ) {
+      Alert.alert("Missing Information", "Please fill in all fields.");
+      return;
+    }
+
+    if (isNaN(parseFloat(budget))) {
+      Alert.alert("Invalid Budget", "Budget must be a number.");
+      return;
+    }
+
+    const payload = {
+      userId,
+      foodTypes: foodTypes
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      allergies: allergies
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      medicalConditions: medicalConditions
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      diabeticRange,
+      pregnancyStatus,
+      budget: parseFloat(budget),
+    };
+
     try {
-      const storedUserId = await AsyncStorage.getItem("userId");
-      if (!storedUserId) {
-        Alert.alert("Error", "User ID not found. Please login again.");
-        return;
-      }
-
-      setUserId(storedUserId);
-
-      const res = await axios.get<FoodPreferences>(
-        `${API_URL}/api/foodPreferences/${storedUserId}`
-      );
-
-      if (res.data) {
-        // If preferences already exist, redirect immediately to meal plan
-        await AsyncStorage.setItem("foodPrefs", JSON.stringify(res.data));
-        router.replace("/mealplan"); // << use replace so user can't go back
-        return; // Exit early to prevent rendering form
-      }
+      await axios.post(`${API_URL}/api/foodPreferences/`, payload);
+      await AsyncStorage.setItem("foodPrefs", JSON.stringify(payload));
+      Alert.alert("Success", "Preferences saved. Generating meal plan...");
+      router.push("/mealplan");
     } catch (err) {
-      console.log("No existing preferences found or fetch error.", err);
-      // It's okay to continue to the form
-    } finally {
-      setLoading(false);
+      console.error("Failed to save preferences:", err);
+      Alert.alert("Error", "Failed to save preferences.");
     }
   };
 
-  loadPreferences();
-}, []);
-
-
-  const handleSubmitAndGenerate = async () => {
-  if (!foodTypes || !allergies || !medicalConditions || !diabeticRange || !budget) {
-    Alert.alert('Missing Information', 'Please fill in all fields.');
-    return;
-  }
-
-  if (isNaN(parseFloat(budget))) {
-    Alert.alert('Invalid Budget', 'Budget must be a number.');
-    return;
-  }
-
-  const payload = {
-    userId,
-    foodTypes: foodTypes.split(',').map((item) => item.trim()).filter(Boolean),
-    allergies: allergies.split(',').map((item) => item.trim()).filter(Boolean),
-    medicalConditions: medicalConditions.split(',').map((item) => item.trim()).filter(Boolean),
-    diabeticRange,
-    pregnancyStatus,
-    budget: parseFloat(budget),
-  };
-
-  try {
-    await axios.post(`${API_URL}/api/foodPreferences/`, payload);
-    await AsyncStorage.setItem("foodPrefs", JSON.stringify(payload));
-    Alert.alert("Success", "Preferences saved. Generating meal plan...");
-    router.push("/mealplan");
-  } catch (err) {
-    console.error("Failed to save preferences:", err);
-    Alert.alert("Error", "Failed to save preferences.");
-  }
-};
-
-
-  const textColor = isDark ? "text-dark-text" : "text-text";
-  const inputBg = isDark ? "bg-card" : "bg-white";
-  const inputBorder = isDark ? "border-dark-inputBorder" : "border-inputBorder";
-  const placeholderColor = isDark ? "#A0A0A0" : "#888888";
+  // Colors for light/dark mode
+  const bgColor = isDark ? "#0f172a" : "#f0fdf4";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const textColor = isDark ? "#f1f5f9" : "#1f2937";
+  const secondaryText = isDark ? "#94a3b8" : "#64748b";
+  const borderColor = isDark ? "#334155" : "#d1fae5";
+  const placeholderColor = isDark ? "#94a3b8" : "#9ca3af";
 
   if (loading) {
     return (
-      <View
-        className={`flex-1 justify-center items-center ${
-          isDark ? "bg-background" : "bg-white"
-        }`}
-      >
-        <ActivityIndicator size="large" color={isDark ? "white" : "green"} />
-        <Text className={`mt-4 text-lg ${textColor}`}>
+      <View style={[styles.loadingContainer, { backgroundColor: bgColor }]}>
+        <ActivityIndicator
+          size="large"
+          color={isDark ? "#4ade80" : "#059669"}
+        />
+        <Text style={[styles.loadingText, { color: textColor }]}>
           Loading Preferences...
         </Text>
       </View>
     );
   }
 
-  // If prefs exist, show a message and allow editing (instead of just showing text)
-  // Or, you could show the form with pre-filled data and a "Update Preferences" button
-  // For this example, I'll show the form pre-filled for editing.
-  // The 'prefs' state now directly holds the fetched data, so the form is always rendered.
-
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingBottom: 40 }} // Add bottom padding for scrollability
-      className={`flex-1 px-5 pt-12 ${isDark ? "bg-background" : "bg-white"}`}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1, backgroundColor: bgColor }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // Increased offset for iOS
     >
-      <Text className={`text-2xl font-bold mb-6 ${textColor}`}>
-        {prefs ? "Update Your Food Preferences" : "Fill Your Food Preferences"}
-      </Text>
-
-      {/* Food Types */}
-      <View className="mb-4">
-        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-          Food Types
-        </Text>
-        <TextInput
-          value={foodTypes}
-          onChangeText={setFoodTypes}
-          placeholder="e.g. vegetarian, keto, gluten-free"
-          placeholderTextColor={placeholderColor}
-          className={`border ${inputBorder} rounded-lg p-3 ${inputBg} ${textColor}`}
-        />
-        <Text
-          className={`text-xs mt-1 ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Separate multiple types with commas.
-        </Text>
-      </View>
-
-      {/* Allergies */}
-      <View className="mb-4">
-        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-          Allergies
-        </Text>
-        <TextInput
-          value={allergies}
-          onChangeText={setAllergies}
-          placeholder="e.g. nuts, dairy, shellfish"
-          placeholderTextColor={placeholderColor}
-          className={`border ${inputBorder} rounded-lg p-3 ${inputBg} ${textColor}`}
-        />
-        <Text
-          className={`text-xs mt-1 ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Separate multiple allergies with commas.
-        </Text>
-      </View>
-
-      {/* Medical Conditions */}
-      <View className="mb-4">
-        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-          Medical Conditions
-        </Text>
-        <TextInput
-          value={medicalConditions}
-          onChangeText={setMedicalConditions}
-          placeholder="e.g. diabetes, heart disease, high blood pressure"
-          placeholderTextColor={placeholderColor}
-          className={`border ${inputBorder} rounded-lg p-3 ${inputBg} ${textColor}`}
-        />
-        <Text
-          className={`text-xs mt-1 ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Separate multiple conditions with commas.
-        </Text>
-      </View>
-
-      {/* Diabetic Range */}
-      <View className="mb-4">
-        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-          Diabetic Range (if applicable)
-        </Text>
-        <TextInput
-          value={diabeticRange}
-          onChangeText={setDiabeticRange}
-          placeholder="e.g. 120-140 (mg/dL)"
-          placeholderTextColor={placeholderColor}
-          className={`border ${inputBorder} rounded-lg p-3 ${inputBg} ${textColor}`}
-        />
-        <Text
-          className={`text-xs mt-1 ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Enter your target blood sugar range.
-        </Text>
-      </View>
-
-      {/* Pregnancy Status */}
-      <View className="flex-row items-center justify-between mb-4 px-2 py-3 border rounded-lg ${inputBorder} ${inputBg}">
-        <Text className={`text-base font-semibold ${textColor}`}>
-          Are you currently pregnant?
-        </Text>
-        <Switch
-          value={pregnancyStatus}
-          onValueChange={setPregnancyStatus}
-          trackColor={{
-            false: isDark ? "#767577" : "#E0E0E0",
-            true: "#4CAF50",
-          }} // Green for on
-          thumbColor={pregnancyStatus ? "#f4f3f4" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-        />
-      </View>
-
-      {/* Budget */}
-      <View className="mb-6">
-        <Text className={`text-base font-semibold mb-2 ${textColor}`}>
-          Budget (BDT per meal)
-        </Text>
-        <TextInput
-          value={budget}
-          onChangeText={(text) => setBudget(text.replace(/[^0-9.]/g, ""))} // Allow only numbers and one decimal
-          keyboardType="numeric"
-          placeholder="e.g. 150, 200"
-          placeholderTextColor={placeholderColor}
-          className={`border ${inputBorder} rounded-lg p-3 ${inputBg} ${textColor}`}
-        />
-        <Text
-          className={`text-xs mt-1 ${
-            isDark ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
-          Enter your average budget for a single meal in BDT.
-        </Text>
-      </View>
-
-      {/* Save Button */}
-      <TouchableOpacity
-        onPress={handleSubmitAndGenerate}
-        className="bg-green-600 py-3 rounded-lg items-center justify-center shadow-md"
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag" // Add this
       >
-        <Text className="text-white text-lg font-bold">Generate Meal Plan</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <Animated.View style={styles.header} entering={FadeIn.duration(600)}>
+          <LinearGradient
+            colors={["rgba(5, 150, 105, 0.8)", "rgba(6, 95, 70, 0.9)"]}
+            style={styles.gradientOverlay}
+          />
+          <Animated.Text
+            style={styles.title}
+            entering={FadeInDown.duration(800).delay(200)}
+          >
+            Your Food Preferences
+          </Animated.Text>
+          <Animated.Text
+            style={styles.subtitle}
+            entering={FadeInDown.duration(800).delay(300)}
+          >
+            Help us create personalized meal plans just for you
+          </Animated.Text>
+        </Animated.View>
+
+        <Animated.View
+          style={[styles.formContainer, animatedFormStyle]}
+          entering={SlideInRight.duration(600).delay(400)}
+        >
+          {/* Food Types */}
+          <Animated.View
+            style={styles.formGroup}
+            entering={FadeInDown.duration(600).delay(500)}
+          >
+            <Text style={[styles.label, { color: textColor }]}>Food Types</Text>
+            <TextInput
+              value={foodTypes}
+              onChangeText={setFoodTypes}
+              placeholder="e.g. vegetarian, keto, gluten-free"
+              placeholderTextColor={placeholderColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                  color: textColor,
+                },
+              ]}
+            />
+            <Text style={[styles.hint, { color: secondaryText }]}>
+              Separate multiple types with commas
+            </Text>
+          </Animated.View>
+
+          {/* Allergies */}
+          <Animated.View
+            style={styles.formGroup}
+            entering={FadeInDown.duration(600).delay(550)}
+          >
+            <Text style={[styles.label, { color: textColor }]}>Allergies</Text>
+            <TextInput
+              value={allergies}
+              onChangeText={setAllergies}
+              placeholder="e.g. nuts, dairy, shellfish"
+              placeholderTextColor={placeholderColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                  color: textColor,
+                },
+              ]}
+            />
+            <Text style={[styles.hint, { color: secondaryText }]}>
+              Separate multiple allergies with commas
+            </Text>
+          </Animated.View>
+
+          {/* Medical Conditions */}
+          <Animated.View
+            style={styles.formGroup}
+            entering={FadeInDown.duration(600).delay(600)}
+          >
+            <Text style={[styles.label, { color: textColor }]}>
+              Medical Conditions
+            </Text>
+            <TextInput
+              value={medicalConditions}
+              onChangeText={setMedicalConditions}
+              placeholder="e.g. diabetes, heart disease, high blood pressure"
+              placeholderTextColor={placeholderColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                  color: textColor,
+                },
+              ]}
+            />
+            <Text style={[styles.hint, { color: secondaryText }]}>
+              Separate multiple conditions with commas
+            </Text>
+          </Animated.View>
+
+          {/* Diabetic Range */}
+          <Animated.View
+            style={styles.formGroup}
+            entering={FadeInDown.duration(600).delay(650)}
+          >
+            <Text style={[styles.label, { color: textColor }]}>
+              Diabetic Range (if applicable)
+            </Text>
+            <TextInput
+              value={diabeticRange}
+              onChangeText={setDiabeticRange}
+              placeholder="e.g. 120-140 (mg/dL)"
+              placeholderTextColor={placeholderColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                  color: textColor,
+                },
+              ]}
+            />
+            <Text style={[styles.hint, { color: secondaryText }]}>
+              Enter your target blood sugar range
+            </Text>
+          </Animated.View>
+
+          {/* Pregnancy Status */}
+          <Animated.View
+            style={[
+              styles.switchContainer,
+              {
+                backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                borderColor: "#9CA3AF",
+              },
+            ]}
+            entering={FadeInDown.duration(600).delay(700)}
+          >
+            <Text style={[styles.switchLabel, { color: textColor }]}>
+              Are you currently pregnant?
+            </Text>
+            <Switch
+              value={pregnancyStatus}
+              onValueChange={setPregnancyStatus}
+              trackColor={{
+                false: isDark ? "#475569" : "#cbd5e1",
+                true: "#059669",
+              }}
+              thumbColor={pregnancyStatus ? "#f0fdf4" : "#f8fafc"}
+            />
+          </Animated.View>
+
+          {/* Budget */}
+          <Animated.View
+            style={styles.formGroup}
+            entering={FadeInDown.duration(600).delay(750)}
+          >
+            <Text style={[styles.label, { color: textColor }]}>
+              Budget (BDT per meal)
+            </Text>
+            <TextInput
+              value={budget}
+              onChangeText={(text) => setBudget(text.replace(/[^0-9.]/g, ""))}
+              keyboardType="numeric"
+              placeholder="e.g. 150, 200"
+              placeholderTextColor={placeholderColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                  color: textColor,
+                },
+              ]}
+            />
+            <Text style={[styles.hint, { color: secondaryText }]}>
+              Enter your average budget for a single meal in BDT
+            </Text>
+          </Animated.View>
+
+          {/* Save Button */}
+          <Animated.View entering={FadeInDown.duration(600).delay(800)}>
+            <TouchableOpacity
+              onPress={handleSubmitAndGenerate}
+              style={styles.submitButton}
+              activeOpacity={0.9}
+            >
+              <LinearGradient
+                colors={["#059669", "#065f46"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientButton}
+              >
+                <Text style={styles.buttonText}>Generate Meal Plan</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-// You can add a StyleSheet if you have complex, non-utility styles
 const styles = StyleSheet.create({
-  // Example for a focus border style if needed
-  inputFocused: {
-    borderColor: "#2196F3", // Secondary blue on focus
-    borderWidth: 2,
+  container: {
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 18,
+    marginTop: 20,
+  },
+  header: {
+    height: 180,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    position: "relative",
+    paddingTop: 32,
+  },
+  gradientOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "white",
+    textAlign: "center",
+    marginBottom: 10,
+    zIndex: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
+    paddingHorizontal: 30,
+    zIndex: 10,
+  },
+  formContainer: {
+    padding: 6,
+    marginHorizontal: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  input: {
+    borderRadius: 32,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  hint: {
+    fontSize: 12,
+    marginTop: 5,
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 32,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  switchLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+  },
+  submitButton: {
+    marginTop: 10,
+    borderRadius: 30,
+    overflow: "hidden",
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  gradientButton: {
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

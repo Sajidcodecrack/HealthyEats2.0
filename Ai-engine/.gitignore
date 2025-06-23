@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.env
+.env
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# VSCode
+.vscode/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Pytest cache
+.pytest_cache/
+
+# Pydantic cache
+*.mypy_cache/
+
+# Logs
+*.log
+
+# FastAPI
+*.sqlite3

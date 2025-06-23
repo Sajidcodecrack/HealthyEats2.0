@@ -38,12 +38,12 @@ export default function RootLayout() {
       await SplashScreen.hideAsync();
 
       if (isAuthenticated === false) {
-        router.replace('/signup');
+        router.replace('/onboarding');
       } else if (isAuthenticated === true) {
         if (onboardingCompleted === false) {
           router.replace('/onboarding');
         } else if (onboardingCompleted === true) {
-          router.replace('/(tabs)');
+          router.replace('/home');
         }
       }
     }
@@ -61,8 +61,9 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="foodpref" />
           <Stack.Screen name="mealplan" />
-          {/* NO need to include (tabs) here */}
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="aichat" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="home" options={{ headerShown: false }} />
         </Stack>
       </PaperProvider>
     </View>
