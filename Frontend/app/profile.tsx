@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { Settings, Lock, Heart, Target, LogOut } from "lucide-react-native";
+import { Settings, Lock, Heart, Target, LogOut,ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import { deleteToken } from "../lib/tokenManager"; // Import deleteToken
@@ -78,18 +78,17 @@ export default function ProfileScreen() {
           
           {/* Top navigation */}
           <View className="absolute top-14 left-4">
-            <TouchableOpacity 
-              className="w-10 h-10 rounded-full bg-emerald-700 dark:bg-emerald-900 items-center justify-center"
-              onPress={() => navigation.goBack()}
-            >
-              <Feather name="arrow-left" size={20} color="white" />
-            </TouchableOpacity>
+            <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[
+              styles.backButton,
+              { backgroundColor: "rgba(255,255,255,0.2)" },
+            ]}
+          >
+            <ArrowLeft size={24} color="#FFF" />
+          </TouchableOpacity>
           </View>
-          <View className="absolute top-14 right-4">
-            <TouchableOpacity className="w-10 h-10 rounded-full bg-emerald-700 dark:bg-emerald-900 items-center justify-center">
-              <Feather name="bell" size={20} color="white" />
-            </TouchableOpacity>
-          </View>
+          
 
           {/* Profile Content */}
           <View className="mt-8 border-4 border-emerald-500 dark:border-emerald-700 rounded-full shadow-lg">
@@ -258,5 +257,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 8,
-  }
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 8,
+    borderRadius: 20,
+  },
 });

@@ -10,12 +10,13 @@ import {
   useColorScheme,
   Modal,
 } from "react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
 import { getToken } from "~/lib/tokenManager";
-
+import { useNavigation } from "@react-navigation/native";
 // --- TYPE DEFINITIONS ---
 type Recipe = {
   title: string;
@@ -49,14 +50,16 @@ export default function MealPlanScreen() {
   const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
   const [mealPlanId, setMealPlanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generatingForMeal, setGeneratingForMeal] = useState<string | null>(null);
+  const [generatingForMeal, setGeneratingForMeal] = useState<string | null>(
+    null
+  );
   const [recipeModalVisible, setRecipeModalVisible] = useState(false);
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [currentMealType, setCurrentMealType] = useState<string>("");
-  
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  
+
   // Colors
   const bgColor = isDark ? "#0f172a" : "#f0fdf4";
   const cardBg = isDark ? "#1e293b" : "#ffffff";
@@ -65,7 +68,7 @@ export default function MealPlanScreen() {
   const primaryColor = "#059669";
   const accentColor = "#34d399";
   const borderColor = isDark ? "#334155" : "#d1fae5";
-
+  const navigation = useNavigation();
   const styles = useMemo(() => createStyles(isDark), [isDark]);
 
   const normalizeMealSection = (section: any): MealSection => {
@@ -191,7 +194,10 @@ export default function MealPlanScreen() {
         };
 
         // Save to backend and get ID
-        const saveRes = await axios.post(`${API_URL}/api/mealplan/`, backendPayload);
+        const saveRes = await axios.post(
+          `${API_URL}/api/mealplan/`,
+          backendPayload
+        );
         const savedPlan = saveRes.data;
         setMealPlanId(savedPlan._id);
 
@@ -211,7 +217,7 @@ export default function MealPlanScreen() {
         formattedForUI.Lunch.recipe = null;
         formattedForUI.Snack.recipe = null;
         formattedForUI.Dinner.recipe = null;
-        
+
         setMealPlan(formattedForUI);
       } catch (error: any) {
         console.error("Error:", error.response?.data || error.message);
@@ -232,11 +238,13 @@ export default function MealPlanScreen() {
       Alert.alert("Error", "Meal plan not loaded properly");
       return;
     }
-    
+
     setCurrentMealType(mealType);
-    
+
     // Check if recipe already exists
-    const mealSection = mealPlan?.[mealType as keyof MealPlanResponse] as MealSection;
+    const mealSection = mealPlan?.[
+      mealType as keyof MealPlanResponse
+    ] as MealSection;
     if (mealSection?.recipe) {
       setCurrentRecipe(mealSection.recipe);
       setRecipeModalVisible(true);
@@ -245,7 +253,7 @@ export default function MealPlanScreen() {
 
     // Generate new recipe
     setGeneratingForMeal(mealType);
-    
+
     try {
       const token = await getToken();
       const response = await axios.post(
@@ -259,7 +267,7 @@ export default function MealPlanScreen() {
         const updatedMealPlan = { ...mealPlan };
         updatedMealPlan[mealType as keyof MealPlanResponse] = {
           ...mealPlan[mealType as keyof MealPlanResponse],
-          recipe: response.data.recipe
+          recipe: response.data.recipe,
         };
         setMealPlan(updatedMealPlan);
       }
@@ -324,9 +332,18 @@ export default function MealPlanScreen() {
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <LinearGradient
-        colors={isDark ? ['#065f46', '#064e3b'] : ['#059669', '#047857']}
+        colors={isDark ? ["#065f46", "#064e3b"] : ["#059669", "#047857"]}
         style={styles.header}
       >
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[
+            styles.backButton,
+            { backgroundColor: "rgba(255,255,255,0.2)" },
+          ]}
+        >
+          <ArrowLeft size={24} color="#FFF" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Daily Meal Plan</Text>
       </LinearGradient>
 
@@ -334,59 +351,62 @@ export default function MealPlanScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {(["Breakfast", "Lunch", "Snack", "Dinner"] as const).map((mealType) => {
-          const section = mealPlan[mealType];
-          return (
-            <View
-              key={mealType}
-              style={[styles.mealCard, { backgroundColor: cardBg }]}
-            >
-              <Text style={[styles.mealTitle, { color: primaryColor }]}>
-                {mealType}
-              </Text>
-
-              <RenderSection title="Foods" data={section.Foods} />
-              <RenderSection title="Fruits" data={section.Fruits} />
-              <RenderSection
-                title="Drinks/Tea"
-                data={section.DrinksOrTea}
-              />
-
-              <View style={styles.detailSection}>
-                <Text style={[styles.detailTitle, { color: accentColor }]}>
-                  Nutrition:
-                </Text>
-                <Text style={[styles.detailItem, { color: textColor }]}>
-                  {section.Nutrition || "Not specified."}
-                </Text>
-              </View>
-
-              <Text style={[styles.costText, { color: secondaryText }]}>
-                Estimated Cost:{" "}
-                <Text style={{ fontWeight: "bold", color: textColor }}>
-                  {section.EstimatedCost || "N/A"}
-                </Text>
-              </Text>
-
-              <TouchableOpacity
-                style={[styles.button, { 
-                  backgroundColor: generatingForMeal === mealType ? "#ccc" : primaryColor 
-                }]}
-                onPress={() => handleGenerateRecipe(mealType)}
-                disabled={!!generatingForMeal}
+        {(["Breakfast", "Lunch", "Snack", "Dinner"] as const).map(
+          (mealType) => {
+            const section = mealPlan[mealType];
+            return (
+              <View
+                key={mealType}
+                style={[styles.mealCard, { backgroundColor: cardBg }]}
               >
-                {generatingForMeal === mealType ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.buttonText}>
-                    {section.recipe ? "View Recipe" : "Generate Recipe"}
+                <Text style={[styles.mealTitle, { color: primaryColor }]}>
+                  {mealType}
+                </Text>
+
+                <RenderSection title="Foods" data={section.Foods} />
+                <RenderSection title="Fruits" data={section.Fruits} />
+                <RenderSection title="Drinks/Tea" data={section.DrinksOrTea} />
+
+                <View style={styles.detailSection}>
+                  <Text style={[styles.detailTitle, { color: accentColor }]}>
+                    Nutrition:
                   </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-        
+                  <Text style={[styles.detailItem, { color: textColor }]}>
+                    {section.Nutrition || "Not specified."}
+                  </Text>
+                </View>
+
+                <Text style={[styles.costText, { color: secondaryText }]}>
+                  Estimated Cost:{" "}
+                  <Text style={{ fontWeight: "bold", color: textColor }}>
+                    {section.EstimatedCost || "N/A"}
+                  </Text>
+                </Text>
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor:
+                        generatingForMeal === mealType ? "#ccc" : primaryColor,
+                    },
+                  ]}
+                  onPress={() => handleGenerateRecipe(mealType)}
+                  disabled={!!generatingForMeal}
+                >
+                  {generatingForMeal === mealType ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.buttonText}>
+                      {section.recipe ? "View Recipe" : "Generate Recipe"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            );
+          }
+        )}
+
         <View style={[styles.summaryCard, { backgroundColor: cardBg }]}>
           <Text style={[styles.summaryTitle, { color: primaryColor }]}>
             Daily Summary
@@ -440,7 +460,7 @@ export default function MealPlanScreen() {
       >
         <View style={[styles.modalContainer, { backgroundColor: bgColor }]}>
           <LinearGradient
-            colors={isDark ? ['#065f46', '#064e3b'] : ['#059669', '#047857']}
+            colors={isDark ? ["#065f46", "#064e3b"] : ["#059669", "#047857"]}
             style={styles.modalHeader}
           >
             <Text style={styles.modalTitle}>
@@ -461,22 +481,27 @@ export default function MealPlanScreen() {
                   Ingredients
                 </Text>
                 {currentRecipe.ingredients.map((ingredient, index) => (
-                  <Text 
-                    key={index} 
+                  <Text
+                    key={index}
                     style={[styles.ingredientItem, { color: textColor }]}
                   >
                     • {ingredient}
                   </Text>
                 ))}
               </View>
-
+              <View className="flex-row items-center my-6">
+                <View className="flex-1 h-[2px] bg-gray-200 dark:bg-gray-700" />
+              </View>
               <View style={styles.stepsSection}>
                 <Text style={[styles.sectionTitle, { color: primaryColor }]}>
                   Steps
                 </Text>
                 {currentRecipe.steps.map((step, index) => (
                   <View key={index} style={styles.stepItem}>
-                    <Text style={[styles.stepNumber]} className="text-foreground">
+                    <Text
+                      style={[styles.stepNumber]}
+                      className="text-foreground"
+                    >
                       {index + 1} .
                     </Text>
                     <Text style={[styles.stepText, { color: textColor }]}>
@@ -507,16 +532,16 @@ const createStyles = (isDark: boolean) =>
       flex: 1,
     },
     header: {
-      height: 180,
+      height: 120,
       justifyContent: "center",
       alignItems: "center",
-      paddingTop: 50,
+      paddingTop: 30,
       paddingHorizontal: 20,
       borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20
+      borderBottomRightRadius: 20,
     },
     headerTitle: {
-      fontSize: 28,
+      fontSize: 20,
       fontWeight: "bold",
       color: "white",
       textAlign: "center",
@@ -584,6 +609,14 @@ const createStyles = (isDark: boolean) =>
       marginTop: 8,
       marginBottom: 16,
     },
+    backButton: {
+      marginRight: 12,
+      padding: 8,
+      borderRadius: 20,
+      position: "absolute",
+      top: 55,
+      left: 20,
+    },
     button: {
       paddingVertical: 14,
       borderRadius: 12,
@@ -642,12 +675,14 @@ const createStyles = (isDark: boolean) =>
       height: 200,
       justifyContent: "center",
       alignItems: "center",
-      paddingTop: 40,
+      paddingTop: 60,
       paddingHorizontal: 20,
       flexDirection: "row",
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
     },
     modalTitle: {
-      fontSize: 22,
+      fontSize: 16,
       fontWeight: "bold",
       color: "white",
       textAlign: "center",

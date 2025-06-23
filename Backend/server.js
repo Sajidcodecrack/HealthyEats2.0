@@ -9,6 +9,9 @@ const foodAIRoutes = require('./routes/foodAI');
 const foodPreferencesRoutes = require('./routes/foodPreferences')
 const mealplanRoutes = require('./routes/mealplanRoutes'); // Ensure this route exists
 const recipeRoutes = require('./routes/meal');
+const chatlogRoutes = require('./routes/chatBotRoutes'); 
+
+
 // const reminderRoutes = require('./routes/reminderRoutes');
 // Add more as you implement them
 
@@ -30,7 +33,7 @@ app.use('/api/foodAI', foodAIRoutes);
 app.use('/api/foodPreferences', foodPreferencesRoutes);
 app.use('/api/mealplan', mealplanRoutes ); // Ensure this route exists
 app.use('/api/meals', recipeRoutes); 
-
+app.use('/api/chatlogs', chatlogRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

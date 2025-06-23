@@ -116,7 +116,7 @@ export default function HomeScreen() {
               borderColor: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
             }]}
           >
-            <Feather name="award" size={18} color="green" />
+            <Feather name="award" size={18} color="#fff" />
             <Text className="text-foreground ml-2 font-bold">Pro</Text>
           </TouchableOpacity>
         </View>
