@@ -17,6 +17,10 @@ exports.generateRecipe = async (req, res) => {
     const menuText = JSON.stringify(selectedMeal, null, 2);
     const recipe = await generateRecipeFromLLM(menuText);
 
+<<<<<<< Updated upstream
+=======
+    //  Save under correct sub-document
+>>>>>>> Stashed changes
     plan[mealType].recipe = recipe;
     plan.markModified(`${mealType}.recipe`); // ✅ Tell Mongoose to save this change
     await plan.save();

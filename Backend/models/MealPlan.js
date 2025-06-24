@@ -13,7 +13,7 @@ const MealSectionSchema = new Schema({
   Drinks_Tea: { type: [String], required: true },
   Nutrition: { type: String, required: true },
   EstimatedCost: { type: String, required: true },
-  recipe: { type: RecipeSchema, default: null } // ✅ Add this line
+  recipe: { type: RecipeSchema, default: null } 
 }, { _id: false });
 
 const MealPlanSchema = new Schema(
