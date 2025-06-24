@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfileroutes');
 const foodAIRoutes = require('./routes/foodAI');
-const foodPreferencesRoutes = require('./routes/foodPreferences')
+const foodPreferencesRoutes = require('./routes/foodPreferences');
 const mealplanRoutes = require('./routes/mealplanRoutes'); // Ensure this route exists
 const recipeRoutes = require('./routes/meal');
 const chatlogRoutes = require('./routes/chatBotRoutes'); 
@@ -40,7 +40,7 @@ mongoose.connect(process.env.MONGODB_URI, {
   useUnifiedTopology: true,
 })
 .then(() => {
-  console.log('✔️  MongoDB connected');
+  console.log('MongoDB connected');
   app.listen(PORT, () => console.log(` Server listening on port ${PORT}`));
 })
 .catch(err => {
