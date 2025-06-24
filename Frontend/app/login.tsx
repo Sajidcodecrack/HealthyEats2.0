@@ -195,6 +195,7 @@ const Login: React.FC = () => {
               <Mail size={20} color="#059669" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
+                className="text-foreground"
                 placeholder="Email address"
                 placeholderTextColor="#9CA3AF"
                 value={email}
@@ -212,6 +213,7 @@ const Login: React.FC = () => {
               <Lock size={20} color="#059669" style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.passwordInput]}
+                className="text-foreground"
                 placeholder="Password"
                 placeholderTextColor="#9CA3AF"
                 value={password}

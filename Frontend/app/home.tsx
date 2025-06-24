@@ -116,7 +116,7 @@ export default function HomeScreen() {
               borderColor: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)",
             }]}
           >
-            <Feather name="award" size={18} color="#fff" />
+            <Feather name="award" size={18} color="#10b981" />
             <Text className="text-foreground ml-2 font-bold">Pro</Text>
           </TouchableOpacity>
         </View>
@@ -216,6 +216,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             className="w-[48%] rounded-3xl overflow-hidden"
             style={{ height: 140 }}
+            onPress={() => navigation.navigate("fitnessplan")}
           >
             <ImageBackground
               source={fitnessPlanImage}

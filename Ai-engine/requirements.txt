@@ -2,6 +2,11 @@ fastapi
 uvicorn[standard]
 langchain
 langchain-google-genai
+langchain-community
 google-generativeai
 python-dotenv
 pydantic
+transformers
+faiss-cpu
+huggingface-hub
+sentence-transformers

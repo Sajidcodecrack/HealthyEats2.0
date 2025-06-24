@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Frontend",
-    "slug": "Frontend",
+    "name": "HealthyEats",
+    "slug": "HealthyEats",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -13,8 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true
     },
@@ -43,7 +42,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.104:3000"
+      "apiUrl": "http://192.168.0.101:3000"
     }
   }
 }
