@@ -36,7 +36,7 @@ class PlanResponse(BaseModel):
     plan: list  # JSON structure for 7-day plan
 
 # RAG Pipeline Initialization
-EXERCISE_FILE = "C:/Users/sahil/Dropbox/PC/Documents/projects/HealthyEats2.0/ai-engine/modules/exercise.json"
+EXERCISE_FILE = "Ai-engine/modules/exercise.json"
 if not os.path.isfile(EXERCISE_FILE):
     raise RuntimeError(f"Missing {EXERCISE_FILE}")
 
