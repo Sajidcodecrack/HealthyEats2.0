@@ -10,14 +10,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure the Gemini API
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Create a LangChain Gemini chat model
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0.7,
-    max_tokens=2048
+    max_tokens=2048,
+    google_api_key=os.getenv("GEMINI_API_KEY") 
 )
 
 # Define a basic conversation template prompt
