@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "forward-adviser-424411-n7",
+  "private_key_id": "c464d8493eac6a0ab0a26ddf81e35293ff41e2ee",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCaBaB/JE65pN8S\nfITyCc+iQynzHu5qtJEzPZaIrdHs+M7W8P3AB0V30PIjQi6VR+13a3m/Rln3J6M8\nPpXrg1+zT497zw29/l9PlCCkKGLbusYoiH+N2TCTdrZkGAtIfJuihLLrGwTdq1uI\nf50dwbmnG2SZxz7A9/ZfFtbmRb0PwCr7wvrRYqtBD9Z7PHsTofdoRY8ZA40AsRim\nm1TP1VdTYlugCn+0Ujb0UynoXPBpJp9MkSrshr29ROxuiolbMdzkfyZQI5ldt9wt\n4GQxQfQewBLMlrUdJJTx66BTbthT85MsojyueQTfCMzRAQJ+958kAWyD48Qo08Hb\n51i6dXAhAgMBAAECggEAIz0g1p4FtgMy922OVDsq6na/6Qw9Y6P66ZSQdaaBNlzJ\npBNAlzgCrJJdZ/Q7KLPrcIxiL0FHEZ1bw0uVbOwij+mmzB6YCA1kHJapLi3ASoIN\n1tW+C0PzEXYSbk2y/StnR1RhhBlrMFVFjLIXzihV09YYWvejU66Xy3M0CTzQ8AJ+\nAwKOtya+iOUQEAg+Vw6yvZ4v8R2FDuDTuijOLViywelp25Qhp/HwRW2ZaiF4z+Pd\nvA/6FxZU9eQgvI8aIjDhWjC7nwLPjTO+hR9sQF87SMlYJ+o6XAbbptrEfw46jPLJ\nSgCXJKlvfH6D7dkDthtNjZaNiouww10PAHvCBcwCLQKBgQDZxouXKKcWjDr92G88\n8sxO8O8zrIcNuBOvmM9rhC4r11QCbH0eAcKuwY1zxYMP9jOvR8fr07HHN8M5BLFj\ntt8bVQFBJdS06D2gY8EE5FJAKKohhT/6QtxR1Gx5jnr/FK6rYolfmaXtynDGr7Q0\nuRBldnJ5HGeG/24PeAXEj5i4nQKBgQC1DmY0V2aiW7mEW0+bfOwuW4AtS5qdm3+u\nCdbZeGdt9Q88ZQ1NjMAcMyIQKvRKPKuRxYJaBB6AMRqNBFM7+iiaAlvgMVs2xMTa\nPWBRD4qWpoj/9iLlLD0PIMAhX3pztsjQMqfQq0kA9prO5XSBrPnhG7ebwvFKtnAV\ne3wWQ610VQKBgQCXtytednLZUX5zhEoSwu+0+0MZ09MOqrQEPEgclix4XH3pZl1P\n/1f62VrLUcl54EKnlTFhSMzshhuaaHuQhUEvUGwcT9e85KKyT2yUFOB8VBgaXDNz\nDQticsPTd4CWnnkFaxNbJ7aiT8t7j8LSjC8xEHC1kSVKtj6dxjb2djemPQKBgChY\niRXo1Aoh/nksD9VKRScfZLSzQEUWvaD+uE3Fsuah0T9YFVrOnpCqJFEOAVn5oxHc\nvWtpt5JBXvVFnXakDCAlnmubFARkXKl1O91UZUGk4qqHIseG0CRq2+WT7SmT9bPP\nVe39/UqlqWGpaAjtjtFG5+dhzXskpF1lIwWjFyfxAoGAVFYF7GSg0bynkdNpAdI1\nPnLYXtLU4qQLnL5rUeQaHrKh71ZjyEq4bUm4Stl8DnCbNqT0SACrlFQJbd3BYywL\nFWpFN7hvQYP4c0VmsPrYB/RoxPRkPNL0BAHFOyTxworqe2WTKlcf4L1G2WZM54n9\nUSV27g3lmmhPpNLWCaru+TA=\n-----END PRIVATE KEY-----\n",
+  "client_email": "fitness@forward-adviser-424411-n7.iam.gserviceaccount.com",
+  "client_id": "117055021722785966093",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fitness%40forward-adviser-424411-n7.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

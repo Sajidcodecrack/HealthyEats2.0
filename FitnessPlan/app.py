@@ -1,6 +1,11 @@
+# app.py
+# uvicorn rag_fitness_plan:app --reload
+
+
 import os
 import json
 import logging
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_community.vectorstores.faiss import FAISS
@@ -16,6 +21,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Load environment variables
 load_dotenv()
+
+# FastAPI setup
+app = FastAPI(title="HealthyEats RAG Fitness API")
 
 # Configure Google API credentials
 api_key = os.getenv("GEMINI_API_KEY")
@@ -35,8 +43,8 @@ class PlanRequest(BaseModel):
 class PlanResponse(BaseModel):
     plan: list  # JSON structure for 7-day plan
 
-BASE_DIR = os.path.dirname(__file__)
-EXERCISE_FILE = os.path.join(BASE_DIR, "exercise.json")
+# RAG Pipeline Initialization
+EXERCISE_FILE = "exercise.json"
 if not os.path.isfile(EXERCISE_FILE):
     raise RuntimeError(f"Missing {EXERCISE_FILE}")
 
@@ -126,17 +134,8 @@ rag_chain = (
     | JsonOutputParser()  # Use JsonOutputParser for robust JSON handling
 )
 
-def generate_fitness_plan(req: PlanRequest) -> PlanResponse:
-    """
-    Generate a personalized 7-day fitness plan using the RAG pipeline.
-    
-    Args:
-        req (PlanRequest): User input containing age, gender, fitness goal, experience level,
-                          available equipment, and health conditions.
-    
-    Returns:
-        PlanResponse: A response containing the 7-day workout plan in JSON format.
-    """
+@app.post("/plan", response_model=PlanResponse)
+async def create_plan(req: PlanRequest):
     query_text = (
         f"Generate plan for age={req.age}, gender={req.gender}, "
         f"goal={req.fitness_goal}, experience={req.experience_level}, "
@@ -164,4 +163,10 @@ def generate_fitness_plan(req: PlanRequest) -> PlanResponse:
         return PlanResponse(plan=result)
     except Exception as e:
         logging.error(f"Error processing request: {str(e)}")
-        raise
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))  # Render provides PORT
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
