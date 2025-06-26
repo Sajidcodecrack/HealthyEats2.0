@@ -11,7 +11,7 @@ const mealplanRoutes = require('./routes/mealplanRoutes'); // Ensure this route 
 const recipeRoutes = require('./routes/meal');
 const chatlogRoutes = require('./routes/chatBotRoutes');
 const imageRoutes = require('./routes/image.routes');
-
+const waterRoutes = require('./routes/water.routes');
 
 
 // const reminderRoutes = require('./routes/reminderRoutes');
@@ -37,6 +37,7 @@ app.use('/api/mealplan', mealplanRoutes ); // Ensure this route exists
 app.use('/api/meals', recipeRoutes); 
 app.use('/api/chatlogs', chatlogRoutes);
 app.use('/api/image-analysis', imageRoutes);
+app.use('/api/water', waterRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

@@ -1,0 +1,13 @@
+Set the water goal
+http://localhost:3000/api/water/set (post)
+{
+  "userId": "68378dc74a6468fe944a62e5",
+  "dailyTarget": 2000,
+  "reminderInterval": 60
+}
+Update water intake
+http://localhost:3000/api/water/update (patch)
+{
+    "userId": "68378dc74a6468fe944a62e5",
+    "intake": 500
+}
