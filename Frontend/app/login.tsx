@@ -250,7 +250,7 @@ const Login: React.FC = () => {
                   Remember me
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push("/forgotpassword")}>
                 <Text className="text-emerald-600 dark:text-emerald-400 font-medium">
                   Forgot Password?
                 </Text>

@@ -64,6 +64,7 @@ export default function RootLayout() {
           <Stack.Screen name="aichat" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="fitnessplan" />
+          <Stack.Screen name="forgotpassword" />
           <Stack.Screen name="home" options={{ headerShown: false }} />
         </Stack>
       </PaperProvider>
