@@ -14,25 +14,25 @@ import {
   useColorScheme,
 } from "react-native";
 import { WebView } from "react-native-webview";
-
+import { LinearGradient } from "expo-linear-gradient";
 const { width } = Dimensions.get("window");
 
 export default function FitnessPlan() {
   const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
-  
+  const isDarkMode = colorScheme === "dark";
+
   // Theme colors
   const theme = {
-    background: isDarkMode ? 'bg-gray-900' : 'bg-white',
-    foreground: isDarkMode ? 'text-gray-100' : 'text-gray-900',
-    card: isDarkMode ? 'bg-gray-800' : 'bg-gray-50',
-    cardForeground: isDarkMode ? 'text-gray-100' : 'text-gray-800',
-    primary: 'bg-emerald-400',
-    primaryForeground: 'text-white',
-    secondary: isDarkMode ? 'bg-gray-700' : 'bg-gray-100',
-    secondaryForeground: isDarkMode ? 'text-gray-100' : 'text-gray-800',
-    border: isDarkMode ? 'border-gray-700' : 'border-gray-200',
-    input: isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-900',
+    background: isDarkMode ? "bg-gray-900" : "bg-white",
+    foreground: isDarkMode ? "text-gray-100" : "text-gray-900",
+    card: isDarkMode ? "bg-gray-800" : "bg-gray-50",
+    cardForeground: isDarkMode ? "text-gray-100" : "text-gray-800",
+    primary: "bg-emerald-400",
+    primaryForeground: "text-white",
+    secondary: isDarkMode ? "bg-gray-700" : "bg-gray-100",
+    secondaryForeground: isDarkMode ? "text-gray-100" : "text-gray-800",
+    border: isDarkMode ? "border-gray-700" : "border-gray-200",
+    input: isDarkMode ? "bg-gray-700 text-white" : "bg-white text-gray-900",
   };
 
   const [formData, setFormData] = useState({
@@ -102,16 +102,19 @@ export default function FitnessPlan() {
     }
   };
 
- 
-
-   const renderPlan = () => {
+  const renderPlan = () => {
     if (!fitnessPlan) return null;
 
     return (
       <ScrollView className="mt-5">
         {fitnessPlan.map((dayPlan) => (
-          <View key={dayPlan.day} className={`mb-6 rounded-xl p-5 ${theme.card} shadow-md`}>
-            <Text className={`text-xl font-bold mb-4 ${theme.foreground} pb-3 border-b ${theme.border}`}>
+          <View
+            key={dayPlan.day}
+            className={`mb-6 rounded-xl p-5 ${theme.card} shadow-md`}
+          >
+            <Text
+              className={`text-xl font-bold mb-4 ${theme.foreground} pb-3 border-b ${theme.border}`}
+            >
               {dayPlan.day}
             </Text>
 
@@ -133,29 +136,45 @@ export default function FitnessPlan() {
                         resizeMode="cover"
                       />
                     )}
-                    
+
                     <View className="p-4">
-                      <Text className={`text-lg font-bold mb-2 ${theme.foreground}`}>
+                      <Text
+                        className={`text-lg font-bold mb-2 ${theme.foreground}`}
+                      >
                         {exercise.name}
                       </Text>
-                      <Text className={`text-base ${theme.foreground} opacity-90 mb-1`}>
-                        <Text className="font-semibold">Target:</Text> {exercise.target_muscle}
+                      <Text
+                        className={`text-base ${theme.foreground} opacity-90 mb-1`}
+                      >
+                        <Text className="font-semibold">Target:</Text>{" "}
+                        {exercise.target_muscle}
                       </Text>
-                      <Text className={`text-base ${theme.foreground} opacity-90 mb-1`}>
-                        <Text className="font-semibold">Sets:</Text> {exercise.reps}
+                      <Text
+                        className={`text-base ${theme.foreground} opacity-90 mb-1`}
+                      >
+                        <Text className="font-semibold">Sets:</Text>{" "}
+                        {exercise.reps}
                       </Text>
-                      <Text className={`text-base ${theme.foreground} opacity-90 mb-1`}>
-                        <Text className="font-semibold">Type:</Text> {exercise.type}
+                      <Text
+                        className={`text-base ${theme.foreground} opacity-90 mb-1`}
+                      >
+                        <Text className="font-semibold">Type:</Text>{" "}
+                        {exercise.type}
                       </Text>
-                      <Text className={`text-base ${theme.foreground} opacity-90`}>
-                        <Text className="font-semibold">Difficulty:</Text> {exercise.difficulty}
+                      <Text
+                        className={`text-base ${theme.foreground} opacity-90`}
+                      >
+                        <Text className="font-semibold">Difficulty:</Text>{" "}
+                        {exercise.difficulty}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 ))}
               </View>
             ) : (
-              <Text className={`text-center py-6 italic ${theme.foreground} opacity-70`}>
+              <Text
+                className={`text-center py-6 italic ${theme.foreground} opacity-70`}
+              >
                 Rest Day
               </Text>
             )}
@@ -169,9 +188,10 @@ export default function FitnessPlan() {
     if (!selectedExercise) return null;
 
     const getYouTubeId = (url) => {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
+      return match && match[2].length === 11 ? match[2] : null;
     };
 
     const videoId = getYouTubeId(selectedExercise.video_url);
@@ -183,11 +203,21 @@ export default function FitnessPlan() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="h-[120] bg-emerald-700 justify-center items-start pl-5 pt-12">
+        <LinearGradient
+          colors={["#065f46", "#059669"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            height: 120,
+            paddingTop:32
+          }}
+        >
           <Text className={`text-2xl font-bold text-white`}>
-              {selectedExercise.name}
-            </Text>
-        </View>
+            {selectedExercise.name}
+          </Text>
+        </LinearGradient>
         <View className={`flex-1 ${theme.background}`}>
           <View className="aspect-video w-full">
             <WebView
@@ -200,23 +230,26 @@ export default function FitnessPlan() {
           </View>
 
           <View className={`p-5 ${theme.card} flex-1`}>
-            
             <Text className={`text-base mb-5 ${theme.foreground} opacity-90`}>
               {selectedExercise.description}
             </Text>
 
             <View className={`mt-3 pt-3 border-t ${theme.border}`}>
               <Text className={`text-base mb-2 ${theme.foreground} opacity-90`}>
-                <Text className="font-semibold">Target Muscle:</Text> {selectedExercise.target_muscle}
+                <Text className="font-semibold">Target Muscle:</Text>{" "}
+                {selectedExercise.target_muscle}
               </Text>
               <Text className={`text-base mb-2 ${theme.foreground} opacity-90`}>
-                <Text className="font-semibold">Sets:</Text> {selectedExercise.reps}
+                <Text className="font-semibold">Sets:</Text>{" "}
+                {selectedExercise.reps}
               </Text>
               <Text className={`text-base mb-2 ${theme.foreground} opacity-90`}>
-                <Text className="font-semibold">Type:</Text> {selectedExercise.type}
+                <Text className="font-semibold">Type:</Text>{" "}
+                {selectedExercise.type}
               </Text>
               <Text className={`text-base mb-2 ${theme.foreground} opacity-90`}>
-                <Text className="font-semibold">Difficulty:</Text> {selectedExercise.difficulty}
+                <Text className="font-semibold">Difficulty:</Text>{" "}
+                {selectedExercise.difficulty}
               </Text>
             </View>
 
@@ -235,26 +268,32 @@ export default function FitnessPlan() {
   return (
     <View className={`flex-1 ${theme.background}`}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <Text className={`text-2xl font-bold mb-6 text-center ${theme.foreground}`}>
+        <Text
+          className={`text-2xl font-bold mb-6 text-center ${theme.foreground}`}
+        >
           Create Your Fitness Plan
         </Text>
 
         {/* Age Input */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Age:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Age:
+          </Text>
           <TextInput
             className={`h-12 border rounded-lg px-4 ${theme.input} ${theme.border}`}
             keyboardType="numeric"
             value={formData.age}
             onChangeText={(text) => setFormData({ ...formData, age: text })}
             placeholder="Enter your age"
-            placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
+            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
           />
         </View>
 
         {/* Gender Selection */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Gender:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Gender:
+          </Text>
           <View className="flex-row flex-wrap mt-1">
             {["male", "female", "other"].map((gender) => (
               <TouchableOpacity
@@ -262,8 +301,16 @@ export default function FitnessPlan() {
                 className="flex-row items-center mr-5 mb-3"
                 onPress={() => setFormData({ ...formData, gender })}
               >
-                <View className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${formData.gender === gender ? 'border-emerald-400' : theme.border}`}>
-                  {formData.gender === gender && <View className="w-3 h-3 rounded-full bg-emerald-400" />}
+                <View
+                  className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${
+                    formData.gender === gender
+                      ? "border-emerald-400"
+                      : theme.border
+                  }`}
+                >
+                  {formData.gender === gender && (
+                    <View className="w-3 h-3 rounded-full bg-emerald-400" />
+                  )}
                 </View>
                 <Text className={`${theme.foreground}`}>
                   {gender.charAt(0).toUpperCase() + gender.slice(1)}
@@ -275,7 +322,9 @@ export default function FitnessPlan() {
 
         {/* Fitness Goal */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Fitness Goal:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Fitness Goal:
+          </Text>
           <View className="flex-row flex-wrap mt-1">
             {[
               { id: "muscle_gain", name: "Muscle Gain" },
@@ -286,10 +335,20 @@ export default function FitnessPlan() {
               <TouchableOpacity
                 key={goal.id}
                 className="flex-row items-center mr-5 mb-3"
-                onPress={() => setFormData({ ...formData, fitnessGoal: goal.id })}
+                onPress={() =>
+                  setFormData({ ...formData, fitnessGoal: goal.id })
+                }
               >
-                <View className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${formData.fitnessGoal === goal.id ? 'border-emerald-400' : theme.border}`}>
-                  {formData.fitnessGoal === goal.id && <View className="w-3 h-3 rounded-full bg-emerald-400" />}
+                <View
+                  className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${
+                    formData.fitnessGoal === goal.id
+                      ? "border-emerald-400"
+                      : theme.border
+                  }`}
+                >
+                  {formData.fitnessGoal === goal.id && (
+                    <View className="w-3 h-3 rounded-full bg-emerald-400" />
+                  )}
                 </View>
                 <Text className={`${theme.foreground}`}>{goal.name}</Text>
               </TouchableOpacity>
@@ -299,16 +358,28 @@ export default function FitnessPlan() {
 
         {/* Experience Level */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Experience Level:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Experience Level:
+          </Text>
           <View className="flex-row flex-wrap mt-1">
             {["beginner", "intermediate", "advanced"].map((level) => (
               <TouchableOpacity
                 key={level}
                 className="flex-row items-center mr-5 mb-3"
-                onPress={() => setFormData({ ...formData, experienceLevel: level })}
+                onPress={() =>
+                  setFormData({ ...formData, experienceLevel: level })
+                }
               >
-                <View className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${formData.experienceLevel === level ? 'border-emerald-400' : theme.border}`}>
-                  {formData.experienceLevel === level && <View className="w-3 h-3 rounded-full bg-emerald-400" />}
+                <View
+                  className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${
+                    formData.experienceLevel === level
+                      ? "border-emerald-400"
+                      : theme.border
+                  }`}
+                >
+                  {formData.experienceLevel === level && (
+                    <View className="w-3 h-3 rounded-full bg-emerald-400" />
+                  )}
                 </View>
                 <Text className={`${theme.foreground}`}>
                   {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -320,15 +391,35 @@ export default function FitnessPlan() {
 
         {/* Equipment Selection */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Available Equipment:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Available Equipment:
+          </Text>
           <View className="flex-row flex-wrap">
-            {["dumbbells", "barbell", "bench", "resistance bands", "pull-up bar", "kettlebells", "none"].map((item) => (
+            {[
+              "dumbbells",
+              "barbell",
+              "bench",
+              "resistance bands",
+              "pull-up bar",
+              "kettlebells",
+              "none",
+            ].map((item) => (
               <TouchableOpacity
                 key={item}
-                className={`py-2 px-3 rounded-lg m-1 ${formData.equipment.includes(item) ? 'bg-emerald-400' : theme.secondary}`}
+                className={`py-2 px-3 rounded-lg m-1 ${
+                  formData.equipment.includes(item)
+                    ? "bg-emerald-400"
+                    : theme.secondary
+                }`}
                 onPress={() => toggleEquipment(item)}
               >
-                <Text className={`${formData.equipment.includes(item) ? 'text-white' : theme.foreground}`}>
+                <Text
+                  className={`${
+                    formData.equipment.includes(item)
+                      ? "text-white"
+                      : theme.foreground
+                  }`}
+                >
                   {item.replace(/_/g, " ")}
                 </Text>
               </TouchableOpacity>
@@ -338,13 +429,17 @@ export default function FitnessPlan() {
 
         {/* Health Conditions */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>Health Conditions:</Text>
+          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
+            Health Conditions:
+          </Text>
           <TextInput
             className={`h-24 border rounded-lg px-4 py-3 ${theme.input} ${theme.border}`}
             value={formData.healthConditions}
-            onChangeText={(text) => setFormData({ ...formData, healthConditions: text })}
+            onChangeText={(text) =>
+              setFormData({ ...formData, healthConditions: text })
+            }
             placeholder="Describe any health conditions"
-            placeholderTextColor={isDarkMode ? '#9CA3AF' : '#6B7280'}
+            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
             multiline
           />
         </View>
