@@ -126,111 +126,89 @@ export default function MealPlanScreen() {
     }
   };
 
-  useEffect(() => {
-    const fetchOrGenerateMealPlan = async () => {
-      setLoading(true);
-      try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId) {
-          Alert.alert("Error", "User not identified. Please log in again.");
-          setLoading(false);
-          return;
-        }
-
-        // Try fetching existing meal plan
-        try {
-          const res = await axios.get(`${API_URL}/api/mealplan/${userId}`);
-          if (res.data) {
-            const data = res.data;
-            setMealPlanId(data._id);
-            const formattedPlan: MealPlanResponse = {
-              Breakfast: normalizeMealSection(data.Breakfast),
-              Lunch: normalizeMealSection(data.Lunch),
-              Snack: normalizeMealSection(data.Snack),
-              Dinner: normalizeMealSection(data.Dinner),
-              TotalCalories: data.TotalCalories,
-              TotalEstimatedCost: data.TotalEstimatedCost,
-              WaterIntakeLiters: data.WaterIntakeLiters,
-              Notes: data.Notes,
-            };
-            setMealPlan(formattedPlan);
-            setLoading(false);
-            return;
-          }
-        } catch (err) {
-          console.log("Meal plan not found, generating a new one.");
-        }
-
-        // Generate new meal plan
-        const userProfile = await getUserProfileForMealGen(userId);
-        const generateRes = await axios.post(
-          "https://healthyeats-meal-xohb.onrender.com/generate-meal",
-          userProfile
-        );
-        const generatedPlan = generateRes.data;
-
-        const transformMealSectionForBackend = (section: any) => {
-          if (!section) return undefined;
-          return {
-            Foods: section.Foods || [],
-            Fruits: section.Fruits || [],
-            Drinks_Tea: section["Drinks/Tea"] || [],
-            Nutrition: section.Nutrition || "",
-            EstimatedCost: section.EstimatedCost || "",
-            recipe: null, // Initialize recipe as null
-          };
-        };
-
-        const backendPayload = {
-          userId,
-          Breakfast: transformMealSectionForBackend(generatedPlan.Breakfast),
-          Lunch: transformMealSectionForBackend(generatedPlan.Lunch),
-          Snack: transformMealSectionForBackend(generatedPlan.Snack),
-          Dinner: transformMealSectionForBackend(generatedPlan.Dinner),
-          TotalCalories: generatedPlan.TotalCalories,
-          TotalEstimatedCost: generatedPlan.TotalEstimatedCost,
-          WaterIntakeLiters: generatedPlan.WaterIntakeLiters,
-          Notes: generatedPlan.Notes,
-        };
-
-        // Save to backend and get ID
-        const saveRes = await axios.post(
-          `${API_URL}/api/mealplan/`,
-          backendPayload
-        );
-        const savedPlan = saveRes.data;
-        setMealPlanId(savedPlan._id);
-
-        // Format for UI
-        const formattedForUI: MealPlanResponse = {
-          Breakfast: normalizeMealSection(generatedPlan.Breakfast),
-          Lunch: normalizeMealSection(generatedPlan.Lunch),
-          Snack: normalizeMealSection(generatedPlan.Snack),
-          Dinner: normalizeMealSection(generatedPlan.Dinner),
-          TotalCalories: generatedPlan.TotalCalories,
-          TotalEstimatedCost: generatedPlan.TotalEstimatedCost,
-          WaterIntakeLiters: generatedPlan.WaterIntakeLiters,
-          Notes: generatedPlan.Notes,
-        };
-        // Add recipe field initialized to null
-        formattedForUI.Breakfast.recipe = null;
-        formattedForUI.Lunch.recipe = null;
-        formattedForUI.Snack.recipe = null;
-        formattedForUI.Dinner.recipe = null;
-
-        setMealPlan(formattedForUI);
-      } catch (error: any) {
-        console.error("Error:", error.response?.data || error.message);
-        Alert.alert(
-          "Error",
-          "Could not load or generate your meal plan. Please ensure your profile is complete and try again."
-        );
-      } finally {
+  // Modified to always generate a new meal plan
+  const generateNewMealPlan = async () => {
+    setLoading(true);
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        Alert.alert("Error", "User not identified. Please log in again.");
         setLoading(false);
+        return;
       }
-    };
 
-    fetchOrGenerateMealPlan();
+      // Always generate a new meal plan - skip fetching existing one
+      const userProfile = await getUserProfileForMealGen(userId);
+      const generateRes = await axios.post(
+        "https://healthyeats-meal-xohb.onrender.com/generate-meal",
+        userProfile
+      );
+      const generatedPlan = generateRes.data;
+
+      const transformMealSectionForBackend = (section: any) => {
+        if (!section) return undefined;
+        return {
+          Foods: section.Foods || [],
+          Fruits: section.Fruits || [],
+          Drinks_Tea: section["Drinks/Tea"] || [],
+          Nutrition: section.Nutrition || "",
+          EstimatedCost: section.EstimatedCost || "",
+          recipe: null, // Initialize recipe as null
+        };
+      };
+
+      const backendPayload = {
+        userId,
+        Breakfast: transformMealSectionForBackend(generatedPlan.Breakfast),
+        Lunch: transformMealSectionForBackend(generatedPlan.Lunch),
+        Snack: transformMealSectionForBackend(generatedPlan.Snack),
+        Dinner: transformMealSectionForBackend(generatedPlan.Dinner),
+        TotalCalories: generatedPlan.TotalCalories,
+        TotalEstimatedCost: generatedPlan.TotalEstimatedCost,
+        WaterIntakeLiters: generatedPlan.WaterIntakeLiters,
+        Notes: generatedPlan.Notes,
+      };
+
+      // Save to backend and get ID
+      const saveRes = await axios.post(
+        `${API_URL}/api/mealplan/`,
+        backendPayload
+      );
+      const savedPlan = saveRes.data;
+      setMealPlanId(savedPlan._id);
+
+      // Format for UI
+      const formattedForUI: MealPlanResponse = {
+        Breakfast: normalizeMealSection(generatedPlan.Breakfast),
+        Lunch: normalizeMealSection(generatedPlan.Lunch),
+        Snack: normalizeMealSection(generatedPlan.Snack),
+        Dinner: normalizeMealSection(generatedPlan.Dinner),
+        TotalCalories: generatedPlan.TotalCalories,
+        TotalEstimatedCost: generatedPlan.TotalEstimatedCost,
+        WaterIntakeLiters: generatedPlan.WaterIntakeLiters,
+        Notes: generatedPlan.Notes,
+      };
+      // Add recipe field initialized to null
+      formattedForUI.Breakfast.recipe = null;
+      formattedForUI.Lunch.recipe = null;
+      formattedForUI.Snack.recipe = null;
+      formattedForUI.Dinner.recipe = null;
+
+      setMealPlan(formattedForUI);
+    } catch (error: any) {
+      console.error("Error:", error.response?.data || error.message);
+      Alert.alert(
+        "Error",
+        "Could not generate your meal plan. Please ensure your profile is complete and try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Always generate a new meal plan when the screen is loaded
+    generateNewMealPlan();
   }, []);
 
   const handleGenerateRecipe = async (mealType: string) => {
@@ -320,7 +298,7 @@ export default function MealPlanScreen() {
     return (
       <View style={[styles.centered, { backgroundColor: bgColor }]}>
         <Text style={[styles.errorText, { color: textColor }]}>
-          Oops! No meal plan could be found.
+          Oops! No meal plan could be generated.
         </Text>
         <Text style={[styles.errorSubText, { color: secondaryText }]}>
           Please ensure your profile is complete.
@@ -412,16 +390,17 @@ export default function MealPlanScreen() {
             Daily Summary
           </Text>
 
-          <View style={styles.summaryItem}>
+          <View style={[styles.summaryItem, { flexDirection: 'column' }]}>
             <Text style={[styles.summaryLabel, { color: secondaryText }]}>
               Total Calories:{" "}
             </Text>
+            <View style={{ height: 2 }} /> 
             <Text style={[styles.summaryValue, { color: textColor }]}>
               {mealPlan.TotalCalories || "N/A"}
             </Text>
           </View>
 
-          <View style={styles.summaryItem}>
+          <View style={[styles.summaryItem, { flexDirection: 'column' }]}>
             <Text style={[styles.summaryLabel, { color: secondaryText }]}>
               Estimated Cost:{" "}
             </Text>
@@ -430,7 +409,7 @@ export default function MealPlanScreen() {
             </Text>
           </View>
 
-          <View style={styles.summaryItem}>
+         <View style={[styles.summaryItem, { flexDirection: 'column' }]}>
             <Text style={[styles.summaryLabel, { color: secondaryText }]}>
               Water Intake:{" "}
             </Text>
@@ -527,7 +506,6 @@ export default function MealPlanScreen() {
 
 const createStyles = (isDark: boolean) =>
   StyleSheet.create({
-    // ... (previous styles remain the same)
     container: {
       flex: 1,
     },
@@ -667,7 +645,6 @@ const createStyles = (isDark: boolean) =>
       lineHeight: 20,
       marginTop: 5,
     },
-    // New modal styles
     modalContainer: {
       flex: 1,
     },

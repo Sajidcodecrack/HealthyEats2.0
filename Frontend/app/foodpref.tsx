@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   Switch,
   TouchableOpacity,
@@ -14,6 +13,7 @@ import {
   Platform,
   Keyboard,
   Dimensions,
+  TextInput,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -28,7 +28,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-
+import { getToken } from "~/lib/tokenManager";
 const { height } = Dimensions.get("window");
 
 interface FoodPreferences {
@@ -40,6 +40,26 @@ interface FoodPreferences {
   budget: number;
 }
 
+interface UserProfile {
+  gender: string;
+}
+
+// Predefined options for selections
+const FOOD_TYPES = [
+  "Vegetarian", "Vegan", "Pescatarian", "Keto", 
+  "Gluten-Free", "Dairy-Free", "Paleo", "Low-Carb", "Mediterranean"
+];
+
+const ALLERGY_OPTIONS = [
+  "Nuts", "Dairy", "Shellfish", "Eggs", 
+  "Soy", "Wheat", "Fish", "Sesame", "None"
+];
+
+const MEDICAL_CONDITIONS = [
+  "Diabetes", "Heart Disease", "High Blood Pressure", 
+  "High Cholesterol", "Obesity", "PCOS", "Thyroid", "Kidney Disease"
+];
+
 export default function FoodPrefScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -48,14 +68,15 @@ export default function FoodPrefScreen() {
   const [loading, setLoading] = useState(true);
   const [prefs, setPrefs] = useState<FoodPreferences | null>(null);
   const [userId, setUserId] = useState("");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const API_URL = Constants.expoConfig?.extra?.apiUrl;
   const scrollViewRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // Form states
-  const [foodTypes, setFoodTypes] = useState<string>("");
-  const [allergies, setAllergies] = useState<string>("");
-  const [medicalConditions, setMedicalConditions] = useState<string>("");
+  // Form states with selection arrays
+  const [selectedFoodTypes, setSelectedFoodTypes] = useState<string[]>([]);
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+  const [selectedMedicalConditions, setSelectedMedicalConditions] = useState<string[]>([]);
   const [diabeticRange, setDiabeticRange] = useState<string>("");
   const [pregnancyStatus, setPregnancyStatus] = useState<boolean>(false);
   const [budget, setBudget] = useState<string>("");
@@ -83,20 +104,29 @@ export default function FoodPrefScreen() {
     const loadPreferences = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem("userId");
-        if (!storedUserId) {
-          Alert.alert("Error", "User ID not found. Please login again.");
+        const token = await getToken();
+        
+        if (!storedUserId || !token) {
+          Alert.alert("Error", "User not authenticated. Please login again.");
           return;
         }
 
         setUserId(storedUserId);
 
+        // Fetch user profile
+        const profileRes = await axios.get<UserProfile>(
+          `${API_URL}/api/user-profile/${storedUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setUserProfile(profileRes.data);
+
+        // Check existing food preferences
         const res = await axios.get<FoodPreferences>(
           `${API_URL}/api/foodPreferences/${storedUserId}`
         );
 
         if (res.data) {
           await AsyncStorage.setItem("foodPrefs", JSON.stringify(res.data));
-          router.replace("/mealplan");
           return;
         }
       } catch (err) {
@@ -109,15 +139,32 @@ export default function FoodPrefScreen() {
     loadPreferences();
   }, []);
 
+  // Helper function to check if an item is selected
+  const isSelected = (item: string, selectedItems: string[]) => {
+    return selectedItems.includes(item);
+  };
+
+  // Toggle selection for an item
+  const toggleSelection = (
+    item: string, 
+    selectedItems: string[], 
+    setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    if (selectedItems.includes(item)) {
+      setSelectedItems(selectedItems.filter(i => i !== item));
+    } else {
+      setSelectedItems([...selectedItems, item]);
+    }
+  };
+
   const handleSubmitAndGenerate = async () => {
     if (
-      !foodTypes ||
-      !allergies ||
-      !medicalConditions ||
-      !diabeticRange ||
+      selectedFoodTypes.length === 0 ||
+      selectedAllergies.length === 0 ||
+      selectedMedicalConditions.length === 0 ||
       !budget
     ) {
-      Alert.alert("Missing Information", "Please fill in all fields.");
+      Alert.alert("Missing Information", "Please fill in all required fields.");
       return;
     }
 
@@ -128,20 +175,11 @@ export default function FoodPrefScreen() {
 
     const payload = {
       userId,
-      foodTypes: foodTypes
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      allergies: allergies
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      medicalConditions: medicalConditions
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
+      foodTypes: selectedFoodTypes,
+      allergies: selectedAllergies,
+      medicalConditions: selectedMedicalConditions,
       diabeticRange,
-      pregnancyStatus,
+      pregnancyStatus: userProfile?.gender.toLowerCase() === "female" ? pregnancyStatus : false,
       budget: parseFloat(budget),
     };
 
@@ -163,6 +201,8 @@ export default function FoodPrefScreen() {
   const secondaryText = isDark ? "#94a3b8" : "#64748b";
   const borderColor = isDark ? "#334155" : "#d1fae5";
   const placeholderColor = isDark ? "#94a3b8" : "#9ca3af";
+  const selectedColor = isDark ? "#059669" : "#065f46";
+  const unselectedColor = isDark ? "#334155" : "#e2e8f0";
 
   if (loading) {
     return (
@@ -182,13 +222,13 @@ export default function FoodPrefScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: bgColor }}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0} // Increased offset for iOS
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
       <ScrollView
         ref={scrollViewRef}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag" // Add this
+        keyboardDismissMode="on-drag"
       >
         <Animated.View style={styles.header} entering={FadeIn.duration(600)}>
           <LinearGradient
@@ -218,24 +258,32 @@ export default function FoodPrefScreen() {
             style={styles.formGroup}
             entering={FadeInDown.duration(600).delay(500)}
           >
-            <Text style={[styles.label, { color: textColor }]}>Food Types</Text>
-            <TextInput
-              value={foodTypes}
-              onChangeText={setFoodTypes}
-              placeholder="e.g. vegetarian, keto, gluten-free"
-              placeholderTextColor={placeholderColor}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
-                  borderColor: "#9CA3AF",
-                  color: textColor,
-                },
-              ]}
-            />
-            <Text style={[styles.hint, { color: secondaryText }]}>
-              Separate multiple types with commas
-            </Text>
+            <Text style={[styles.label, { color: textColor }]}>Food Types *</Text>
+            <View style={styles.optionsContainer}>
+              {FOOD_TYPES.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.optionButton,
+                    {
+                      backgroundColor: isSelected(item, selectedFoodTypes) 
+                        ? selectedColor 
+                        : unselectedColor,
+                    },
+                  ]}
+                  onPress={() => toggleSelection(item, selectedFoodTypes, setSelectedFoodTypes)}
+                >
+                  <Text 
+                    style={[
+                      styles.optionText,
+                      { color: isSelected(item, selectedFoodTypes) ? "white" : textColor }
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </Animated.View>
 
           {/* Allergies */}
@@ -243,24 +291,32 @@ export default function FoodPrefScreen() {
             style={styles.formGroup}
             entering={FadeInDown.duration(600).delay(550)}
           >
-            <Text style={[styles.label, { color: textColor }]}>Allergies</Text>
-            <TextInput
-              value={allergies}
-              onChangeText={setAllergies}
-              placeholder="e.g. nuts, dairy, shellfish"
-              placeholderTextColor={placeholderColor}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
-                  borderColor: "#9CA3AF",
-                  color: textColor,
-                },
-              ]}
-            />
-            <Text style={[styles.hint, { color: secondaryText }]}>
-              Separate multiple allergies with commas
-            </Text>
+            <Text style={[styles.label, { color: textColor }]}>Allergies *</Text>
+            <View style={styles.optionsContainer}>
+              {ALLERGY_OPTIONS.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.optionButton,
+                    {
+                      backgroundColor: isSelected(item, selectedAllergies) 
+                        ? selectedColor 
+                        : unselectedColor,
+                    },
+                  ]}
+                  onPress={() => toggleSelection(item, selectedAllergies, setSelectedAllergies)}
+                >
+                  <Text 
+                    style={[
+                      styles.optionText,
+                      { color: isSelected(item, selectedAllergies) ? "white" : textColor }
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </Animated.View>
 
           {/* Medical Conditions */}
@@ -269,25 +325,37 @@ export default function FoodPrefScreen() {
             entering={FadeInDown.duration(600).delay(600)}
           >
             <Text style={[styles.label, { color: textColor }]}>
-              Medical Conditions
+              Medical Conditions *
             </Text>
-            <TextInput
-              value={medicalConditions}
-              onChangeText={setMedicalConditions}
-              placeholder="e.g. diabetes, heart disease, high blood pressure"
-              placeholderTextColor={placeholderColor}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
-                  borderColor: "#9CA3AF",
-                  color: textColor,
-                },
-              ]}
-            />
-            <Text style={[styles.hint, { color: secondaryText }]}>
-              Separate multiple conditions with commas
-            </Text>
+            <View style={styles.optionsContainer}>
+              {MEDICAL_CONDITIONS.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.optionButton,
+                    {
+                      backgroundColor: isSelected(item, selectedMedicalConditions) 
+                        ? selectedColor 
+                        : unselectedColor,
+                    },
+                  ]}
+                  onPress={() => toggleSelection(
+                    item, 
+                    selectedMedicalConditions, 
+                    setSelectedMedicalConditions
+                  )}
+                >
+                  <Text 
+                    style={[
+                      styles.optionText,
+                      { color: isSelected(item, selectedMedicalConditions) ? "white" : textColor }
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </Animated.View>
 
           {/* Diabetic Range */}
@@ -317,30 +385,32 @@ export default function FoodPrefScreen() {
             </Text>
           </Animated.View>
 
-          {/* Pregnancy Status */}
-          <Animated.View
-            style={[
-              styles.switchContainer,
-              {
-                backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
-                borderColor: "#9CA3AF",
-              },
-            ]}
-            entering={FadeInDown.duration(600).delay(700)}
-          >
-            <Text style={[styles.switchLabel, { color: textColor }]}>
-              Are you currently pregnant?
-            </Text>
-            <Switch
-              value={pregnancyStatus}
-              onValueChange={setPregnancyStatus}
-              trackColor={{
-                false: isDark ? "#475569" : "#cbd5e1",
-                true: "#059669",
-              }}
-              thumbColor={pregnancyStatus ? "#f0fdf4" : "#f8fafc"}
-            />
-          </Animated.View>
+          {/* Pregnancy Status - Only for female users */}
+          {userProfile?.gender.toLowerCase() === "female" && (
+            <Animated.View
+              style={[
+                styles.switchContainer,
+                {
+                  backgroundColor: isDark ? "#1e293b" : "#f0fdf4",
+                  borderColor: "#9CA3AF",
+                },
+              ]}
+              entering={FadeInDown.duration(600).delay(700)}
+            >
+              <Text style={[styles.switchLabel, { color: textColor }]}>
+                Are you currently pregnant?
+              </Text>
+              <Switch
+                value={pregnancyStatus}
+                onValueChange={setPregnancyStatus}
+                trackColor={{
+                  false: isDark ? "#475569" : "#cbd5e1",
+                  true: "#059669",
+                }}
+                thumbColor={pregnancyStatus ? "#f0fdf4" : "#f8fafc"}
+              />
+            </Animated.View>
+          )}
 
           {/* Budget */}
           <Animated.View
@@ -348,7 +418,7 @@ export default function FoodPrefScreen() {
             entering={FadeInDown.duration(600).delay(750)}
           >
             <Text style={[styles.label, { color: textColor }]}>
-              Budget (BDT per meal)
+              Budget (BDT per meal) *
             </Text>
             <TextInput
               value={budget}
@@ -496,5 +566,24 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  // Updated styles for button-style selection
+  optionsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+  },
+  optionButton: {
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  optionText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

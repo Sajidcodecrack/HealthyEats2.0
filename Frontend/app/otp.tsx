@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,12 +13,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { Mail, ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Lock, Mail } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Constants from "expo-constants";
-
-// 🌀 Reanimated
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -29,26 +27,23 @@ import Animated, {
 
 const isWeb = Platform.OS === "web";
 
-const ForgotPassword: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
+const OTPVerification: React.FC = () => {
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
-  const [keyboardVisible, setKeyboardVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
-
+  const [resendDisabled, setResendDisabled] = useState(true);
+  const [countdown, setCountdown] = useState(30);
+  const inputs = useRef<Array<TextInput | null>>([]);
   const router = useRouter();
-  const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
-  // Shared value for animation
+  // Keyboard animation
   const formOffset = useSharedValue(0);
+  
   useEffect(() => {
-    const keyboardShow =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const keyboardHide =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const keyboardShow = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const keyboardHide = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSubscription = Keyboard.addListener(keyboardShow, () => {
-      setKeyboardVisible(true);
       formOffset.value = withTiming(-100, {
         duration: 300,
         easing: Easing.inOut(Easing.ease),
@@ -56,7 +51,6 @@ const ForgotPassword: React.FC = () => {
     });
 
     const hideSubscription = Keyboard.addListener(keyboardHide, () => {
-      setKeyboardVisible(false);
       formOffset.value = withTiming(0, {
         duration: 300,
         easing: Easing.inOut(Easing.ease),
@@ -69,13 +63,69 @@ const ForgotPassword: React.FC = () => {
     };
   }, []);
 
+  // Resend OTP countdown timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0 && resendDisabled) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    } else if (countdown === 0) {
+      setResendDisabled(false);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown, resendDisabled]);
+
   const animatedFormStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: formOffset.value }],
   }));
 
+  const handleOtpChange = (text: string, index: number) => {
+    // Allow only single digit
+    if (/^\d?$/.test(text)) {
+      const newOtp = [...otp];
+      newOtp[index] = text;
+      setOtp(newOtp);
+
+      // Auto focus next input
+      if (text && index < 5 && inputs.current[index + 1]) {
+        inputs.current[index + 1]?.focus();
+      }
+      
+      // Auto submit when last digit is entered
+      if (text && index === 5) {
+        handleSubmit();
+      }
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      inputs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleResend = () => {
+    setResendDisabled(true);
+    setCountdown(30);
+    // Add resend logic here
+    router.push("/changepassword"); // Example redirect after resend
+  };
+
   const handleSubmit = () => {
-    // Your submit logic will go here
-    router.push("/otp");
+    setLoading(true);
+    const code = otp.join("");
+    
+    // Validation
+    if (code.length !== 6) {
+      setError("Please enter a 6-digit code");
+      setLoading(false);
+      return;
+    }
+    
+    // Submit logic here
+    setTimeout(() => {
+      setLoading(false);
+      router.push("/changepassword"); // Redirect after successful verification
+    }, 1500);
   };
 
   return (
@@ -95,22 +145,22 @@ const ForgotPassword: React.FC = () => {
             colors={["#065f46", "#059669"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{
-              height: 260,
-              paddingTop: 48,
-            }}
+            style={{ height: 260, paddingTop: 48 }}
           >
-            
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute top-14 left-6 z-10"
+            >
+              <ChevronLeft size={28} color="white" />
+            </TouchableOpacity>
 
-            {!keyboardVisible && (
-              <View className="items-center justify-center h-full">
-                <Image
-                  source={require("../assets/images/IconTransparent.png")}
-                  style={{ width: 120, height: 120 }}
-                  resizeMode="contain"
-                />
-              </View>
-            )}
+            <View className="items-center justify-center h-full">
+              <Image
+                source={require("../assets/images/IconTransparent.png")}
+                style={{ width: 120, height: 120 }}
+                resizeMode="contain"
+              />
+            </View>
           </LinearGradient>
 
           {/* Animated Form */}
@@ -122,14 +172,14 @@ const ForgotPassword: React.FC = () => {
               entering={FadeInDown.delay(100)}
               className="text-foreground dark:text-white text-3xl font-bold text-center mb-4"
             >
-              Reset Password
+              Verify OTP
             </Animated.Text>
 
             <Animated.Text
               entering={FadeInDown.delay(200)}
               className="text-gray-600 dark:text-gray-400 text-center text-base mb-8 px-4"
             >
-              Enter your email to receive a password reset link
+              Enter the 6-digit code sent to your email
             </Animated.Text>
 
             {error ? (
@@ -143,33 +193,28 @@ const ForgotPassword: React.FC = () => {
               </Animated.View>
             ) : null}
 
-            {success ? (
-              <Animated.View
-                entering={FadeInDown.delay(200)}
-                className="bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-800 rounded-xl p-4 mb-6"
-              >
-                <Text className="text-emerald-700 dark:text-emerald-400 text-center text-sm font-medium">
-                  {success}
-                </Text>
-              </Animated.View>
-            ) : null}
-
-            {/* Email Input */}
-            <Animated.View
+            {/* OTP Input Boxes */}
+            <Animated.View 
               entering={FadeInDown.delay(300)}
-              style={styles.inputWrapper}
+              className="flex-row justify-between mb-8"
             >
-              <Mail size={20} color="#059669" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                className="text-foreground"
-                placeholder="Your email address"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+              {Array(6)
+                .fill(0)
+                .map((_, index) => (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => (inputs.current[index] = ref)}
+                    style={styles.otpInput}
+                    className="text-black text-2xl font-bold text-center"
+                    value={otp[index]}
+                    onChangeText={(text) => handleOtpChange(text, index)}
+                    onKeyPress={(e) => handleKeyPress(e, index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    selectTextOnFocus
+                    autoFocus={index === 0}
+                  />
+                ))}
             </Animated.View>
 
             {/* Submit Button */}
@@ -184,24 +229,32 @@ const ForgotPassword: React.FC = () => {
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text className="text-white text-base font-bold">
-                    Send Reset Link
+                    Verify Code
                   </Text>
                 )}
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Back to Login */}
+            {/* Resend Code */}
             <Animated.View
               entering={FadeInDown.delay(500)}
-              className="pt-6 pb-12"
+              className="pt-6 flex-row justify-center"
             >
+              <Text className="text-gray-600 dark:text-gray-400 mr-1">
+                Didn't receive code?
+              </Text>
               <TouchableOpacity
-                onPress={() => router.push("/login")}
-                className="flex-row justify-center items-center"
+                onPress={handleResend}
+                disabled={resendDisabled}
               >
-                <ChevronLeft size={18} color="#059669" />
-                <Text className="text-emerald-600 dark:text-emerald-400 ml-1 font-medium">
-                  Back to Login
+                <Text 
+                  className={`font-medium ${
+                    resendDisabled 
+                      ? "text-gray-400" 
+                      : "text-emerald-600 dark:text-emerald-400"
+                  }`}
+                >
+                  Resend {resendDisabled && `(${countdown}s)`}
                 </Text>
               </TouchableOpacity>
             </Animated.View>
@@ -221,24 +274,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     marginTop: -32,
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: "Inter-Regular",
-    paddingVertical: 16,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 32,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#9CA3AF",
-  },
-  inputIcon: {
-    marginRight: 12,
+  otpInput: {
+    width: 50,
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#F9FAFB",
   },
   submitButton: {
     backgroundColor: "#059669",
@@ -253,4 +295,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ForgotPassword;
+export default OTPVerification;

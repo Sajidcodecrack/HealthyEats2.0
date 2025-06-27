@@ -15,12 +15,16 @@ import {
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { getToken } from "~/lib/tokenManager";
 const { width } = Dimensions.get("window");
 
 export default function FitnessPlan() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === "dark";
-
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
+  const [isPlanSaved, setIsPlanSaved] = useState(false);
   // Theme colors
   const theme = {
     background: isDarkMode ? "bg-gray-900" : "bg-white",
@@ -36,8 +40,6 @@ export default function FitnessPlan() {
   };
 
   const [formData, setFormData] = useState({
-    age: "",
-    gender: "male",
     fitnessGoal: "muscle_gain",
     experienceLevel: "intermediate",
     equipment: ["dumbbells", "bench"],
@@ -48,6 +50,126 @@ export default function FitnessPlan() {
   const [loading, setLoading] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = await getToken();
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) {
+          Alert.alert("Error", "User not authenticated");
+          setProfileLoading(false);
+          return;
+        }
+
+        // Fetch user profile
+        const profileResponse = await fetch(
+          `${API_URL}/api/user-profile/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!profileResponse.ok) throw new Error("Failed to fetch user profile");
+        const profileData = await profileResponse.json();
+        setUserProfile(profileData);
+
+        // Fetch existing fitness plan
+        const planResponse = await fetch(
+          `${API_URL}/api/fitness-plans/user/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        if (planResponse.ok) {
+          const planData = await planResponse.json();
+          if (planData.plan) {
+            setFitnessPlan(planData.plan);
+            setIsPlanSaved(true);
+            
+            // Sync form data with saved plan
+            setFormData({
+              fitnessGoal: planData.fitnessGoal || "muscle_gain",
+              experienceLevel: planData.experienceLevel || "intermediate",
+              equipment: planData.equipment || ["dumbbells", "bench"],
+              healthConditions: planData.healthConditions || "none",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        Alert.alert("Error", "Failed to load data");
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+   const saveFitnessPlan = async (plan) => {
+    try {
+      const token = await getToken();
+      const userId = await AsyncStorage.getItem("userId");
+      
+      const response = await fetch(`${API_URL}/api/fitness-plans`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId,
+          plan,
+          fitnessGoal: formData.fitnessGoal,
+          experienceLevel: formData.experienceLevel,
+          equipment: formData.equipment,
+          healthConditions: formData.healthConditions,
+          age: userProfile.age,
+          gender: userProfile.gender
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save fitness plan");
+      }
+
+      setIsPlanSaved(true);
+      Alert.alert("Success", "Fitness plan saved!");
+    } catch (error) {
+      console.error("Error saving fitness plan:", error);
+      Alert.alert("Error", "Failed to save fitness plan");
+    }
+  };
+
+  // Fetch user profile from backend
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = await getToken();
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) {
+          Alert.alert("Error", "User not authenticated");
+          setProfileLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `${API_URL}/api/user-profile/${userId}`,
+           { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user profile");
+        }
+
+        const data = await response.json();
+        setUserProfile(data);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        Alert.alert("Error", "Failed to load user profile");
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const toggleEquipment = (item) => {
     setFormData((prev) => {
@@ -65,10 +187,15 @@ export default function FitnessPlan() {
       };
     });
   };
+
   const handleSubmit = async () => {
-    // Validation
-    if (!formData.age || isNaN(formData.age)) {
-      Alert.alert("Invalid Age", "Please enter a valid age");
+    if (!userProfile) {
+      Alert.alert("Profile Missing", "User profile not loaded yet");
+      return;
+    }
+
+    if (!userProfile.age || isNaN(userProfile.age)) {
+      Alert.alert("Invalid Profile", "Please set a valid age in your profile");
       return;
     }
 
@@ -76,8 +203,8 @@ export default function FitnessPlan() {
 
     try {
       const payload = {
-        age: parseInt(formData.age),
-        gender: formData.gender,
+        age: userProfile.age,
+        gender: userProfile.gender,
         fitness_goal: formData.fitnessGoal,
         experience_level: formData.experienceLevel,
         available_equipment: formData.equipment.join(", "),
@@ -94,6 +221,7 @@ export default function FitnessPlan() {
 
       const data = await response.json();
       setFitnessPlan(data.plan);
+      saveFitnessPlan(data.plan);
     } catch (error) {
       Alert.alert("Error", "Failed to generate fitness plan");
       console.error(error);
@@ -211,7 +339,7 @@ export default function FitnessPlan() {
             alignItems: "center",
             justifyContent: "center",
             height: 120,
-            paddingTop:32
+            paddingTop: 32,
           }}
         >
           <Text className={`text-2xl font-bold text-white`}>
@@ -264,7 +392,12 @@ export default function FitnessPlan() {
       </Modal>
     );
   };
-
+  
+  {isPlanSaved && fitnessPlan && (
+    <Text className={`text-center mb-4 ${theme.primaryForeground} font-semibold`}>
+      ✓ Plan saved to your profile
+    </Text>
+  )}
   return (
     <View className={`flex-1 ${theme.background}`}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -274,51 +407,35 @@ export default function FitnessPlan() {
           Create Your Fitness Plan
         </Text>
 
-        {/* Age Input */}
-        <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
-            Age:
-          </Text>
-          <TextInput
-            className={`h-12 border rounded-lg px-4 ${theme.input} ${theme.border}`}
-            keyboardType="numeric"
-            value={formData.age}
-            onChangeText={(text) => setFormData({ ...formData, age: text })}
-            placeholder="Enter your age"
-            placeholderTextColor={isDarkMode ? "#9CA3AF" : "#6B7280"}
-          />
-        </View>
-
-        {/* Gender Selection */}
-        <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
-          <Text className={`text-base font-semibold mb-2 ${theme.foreground}`}>
-            Gender:
-          </Text>
-          <View className="flex-row flex-wrap mt-1">
-            {["male", "female", "other"].map((gender) => (
-              <TouchableOpacity
-                key={gender}
-                className="flex-row items-center mr-5 mb-3"
-                onPress={() => setFormData({ ...formData, gender })}
-              >
-                <View
-                  className={`w-5 h-5 rounded-full border-2 mr-2 items-center justify-center ${
-                    formData.gender === gender
-                      ? "border-emerald-400"
-                      : theme.border
-                  }`}
-                >
-                  {formData.gender === gender && (
-                    <View className="w-3 h-3 rounded-full bg-emerald-400" />
-                  )}
-                </View>
-                <Text className={`${theme.foreground}`}>
-                  {gender.charAt(0).toUpperCase() + gender.slice(1)}
+        {/* Display user profile info */}
+        {userProfile && (
+          <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
+            <Text className={`text-lg font-semibold mb-3 ${theme.foreground}`}>
+              Your Profile
+            </Text>
+            <View className="flex-row justify-between">
+              <View>
+                <Text className={`${theme.foreground} opacity-90`}>
+                  <Text className="font-semibold">Age:</Text> {userProfile.age}
                 </Text>
-              </TouchableOpacity>
-            ))}
+                <Text className={`mt-1 ${theme.foreground} opacity-90`}>
+                  <Text className="font-semibold">Gender:</Text>{" "}
+                  {userProfile.gender}
+                </Text>
+              </View>
+              <View>
+                <Text className={`${theme.foreground} opacity-90`}>
+                  <Text className="font-semibold">Height:</Text>{" "}
+                  {userProfile.heightFeet}'{userProfile.heightInches}"
+                </Text>
+                <Text className={`mt-1 ${theme.foreground} opacity-90`}>
+                  <Text className="font-semibold">Weight:</Text>{" "}
+                  {userProfile.weight} kg
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Fitness Goal */}
         <View className={`mb-5 rounded-xl p-4 ${theme.card} shadow-sm`}>
@@ -406,7 +523,7 @@ export default function FitnessPlan() {
             ].map((item) => (
               <TouchableOpacity
                 key={item}
-                className={`py-2 px-3 rounded-lg m-1 ${
+                className={`py-2 px-3 rounded-full m-1 ${
                   formData.equipment.includes(item)
                     ? "bg-emerald-400"
                     : theme.secondary
@@ -446,12 +563,16 @@ export default function FitnessPlan() {
 
         {/* Submit Button */}
         <TouchableOpacity
-          className={`rounded-xl py-4 items-center ${theme.primary} shadow-md mb-8`}
+          className={`rounded-full py-4 items-center ${theme.primary} shadow-md mb-8`}
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || profileLoading}
         >
           <Text className="text-white text-lg font-semibold">
-            {loading ? "Generating Plan..." : "Generate Fitness Plan"}
+            {profileLoading
+              ? "Loading Profile..."
+              : loading
+              ? "Generating Plan..."
+              : "Generate Fitness Plan"}
           </Text>
         </TouchableOpacity>
 
