@@ -1,0 +1,26 @@
+http://localhost:3000/api/image-analysis/upload (post )
+form data- userId
+form-data-image
+ "analysisResult": {
+            "food_name": "Samosa",
+            "calories_per_100g": "300-350",
+            "carbs_per_100g": "25-30g",
+            "fiber_per_100g": "2-4g",
+            "protein_per_100g": "5-8g",
+            "sugar_level": "Moderate to High"
+        },
+        "_id": "685db6df11e66a5719b05918",
+        "createdAt": "2025-06-26T21:08:47.323Z",
+        "__v": 0
+    } "analysisResult": {
+            "food_name": "Samosa",
+            "calories_per_100g": "300-350",
+            "carbs_per_100g": "25-30g",
+            "fiber_per_100g": "2-4g",
+            "protein_per_100g": "5-8g",
+            "sugar_level": "Moderate to High"
+        },
+        "_id": "685db6df11e66a5719b05918",
+        "createdAt": "2025-06-26T21:08:47.323Z",
+        "__v": 0
+    }
