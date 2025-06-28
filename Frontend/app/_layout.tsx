@@ -65,6 +65,8 @@ export default function RootLayout() {
           <Stack.Screen name="profile" />
           <Stack.Screen name="fitnessplan" />
           <Stack.Screen name="forgotpassword" />
+          <Stack.Screen name="otp" />
+          <Stack.Screen name="changepassword" />
           <Stack.Screen name="home" options={{ headerShown: false }} />
         </Stack>
       </PaperProvider>
