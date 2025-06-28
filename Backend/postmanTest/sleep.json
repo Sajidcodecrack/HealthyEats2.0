@@ -1,0 +1,9 @@
+(GET)http://localhost:3000/api/sleep/weekly/userId  (Tell you about weekly sleep records)
+
+(POST) http://localhost:3000/api/sleep/log
+ {
+  "userId": "68378dc74a6468fe944a62e5",
+  "sleepStart": "2025-06-26T23:30:00",
+  "sleepEnd": "2025-06-27T06:45:00",
+  "reminderTime": "22:00"
+}
