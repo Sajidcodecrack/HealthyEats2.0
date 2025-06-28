@@ -14,5 +14,7 @@ router.put('/:userId', auth, userProfileController.updateUserProfile);
 
 // (Optional) Delete user profile
 router.delete('/:userId', auth, userProfileController.deleteUserProfile);
+// // Get BMI and suggested calorie intake
+router.get('/:userId/bmi', auth, userProfileController.getBMIandCalories);
 
 module.exports = router;

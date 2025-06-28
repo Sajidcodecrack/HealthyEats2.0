@@ -1,4 +1,5 @@
 const UserProfile = require('../models/UserProfile');
+const { calculateBMI, suggestCalorieIntake } = require('../utils/bmiUtils');
 
 // Create profile (onboarding)
 exports.createUserProfile = async (req, res) => {
@@ -63,6 +64,41 @@ exports.deleteUserProfile = async (req, res) => {
     const result = await UserProfile.findOneAndDelete({ userId });
     if (!result) return res.status(404).json({ msg: 'Profile not found.' });
     res.json({ msg: 'Profile deleted.' });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+  exports.getBMIandCalories = async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const profile = await UserProfile.findOne({ userId });
+
+      if (!profile) {
+        return res.status(404).json({ msg: 'Profile not found' });
+      }
+
+      const bmi = calculateBMI(profile.heightFeet, profile.heightInches, profile.weight);
+      const suggestedCalories = suggestCalorieIntake(bmi);
+
+      res.json({ bmi, suggestedCalories });
+    } catch (err) {
+      res.status(500).json({ msg: err.message });
+    }
+  };
+};
+// getBMIandCalories
+exports.getBMIandCalories = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const profile = await UserProfile.findOne({ userId });
+
+    if (!profile) {
+      return res.status(404).json({ msg: 'Profile not found' });
+    }
+
+    const bmi = calculateBMI(profile.heightFeet, profile.heightInches, profile.weight);
+    const suggestedCalories = suggestCalorieIntake(bmi);
+
+    res.json({ bmi, suggestedCalories });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }

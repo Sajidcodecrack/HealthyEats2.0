@@ -1,0 +1,73 @@
+http://localhost:3000/api/calorie/goal (post) (setting calorie goal)
+json: {
+  "calorieGoal": 2200
+}
+http://localhost:3000/api/calorie/log (post) (adding a calorie log)
+{
+  "mealType": "lunch",
+  "calories": 700
+}
+output of this :
+{
+  "_id": "685fb94740493085eb25e981",   <-- This is the document ID of the entire calorie log
+  "user": "685971ed5fd982c78f27a01d",  <-- This is the ID of the user (from Users collection)
+  ...
+  "meals": [
+    {
+      "mealType": "lunch",
+      "calories": 700,
+      "confirmed": false,
+      "_id": "685fb97140493085eb25e984"  <-- This is the ID of the individual meal subdocument
+    }
+  ],
+  ...
+}
+http://localhost:3000/api/calorie/today (get) (getting today's calorie log)
+output of this :
+{
+    "_id": "685fb94740493085eb25e981", <-- This is the document ID of the entire calorie log
+    "user": "685971ed5fd982c78f27a01d",<-- This is the ID of the user (from Users collection)
+    "date": "2025-06-28",
+    "totalCalories": 700,
+    "meals": [
+        {
+            "mealType": "lunch",
+            "calories": 700,
+            "confirmed": false,
+            "_id": "685fb97140493085eb25e984"<-- This is the ID of the individual meal subdocument
+        }
+    ],
+    "calorieGoal": 2200,
+    "__v": 1
+}
+ Confirm a Meal (When User Clicks Notification)
+ http://localhost:3000/api/calorie/confirm (patch)
+ Output of this :
+ {
+    "message": "Meal confirmed",
+    "log": {
+        "_id": "685fb94740493085eb25e981",<-- This is the document ID of the entire calorie log
+        "user": "685971ed5fd982c78f27a01d",<-- This is the ID of the user (from Users collection)
+        "date": "2025-06-28",
+        "totalCalories": 700,
+        "meals": [
+            {
+                "mealType": "lunch",
+                "calories": 700,
+                "confirmed": true,
+                "_id": "685fb97140493085eb25e984" This is the ID of the individual meal subdocument
+            }
+        ],
+        "calorieGoal": 2200,
+        "__v": 1
+    }
+}
+Weekly Calorie Log
+http://localhost:3000/api/calorie/weekly(Get)
+
+http://localhost:3000/api/user-profile/685971ed5fd982c78f27a01d/bmi (get)
+output: to show that calories are calculated based on BMI in the calorietracker 
+{
+    "bmi": 24.17,
+    "suggestedCalories": 2200
+}
