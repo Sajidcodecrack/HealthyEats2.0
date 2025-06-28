@@ -9,15 +9,10 @@ const foodAIRoutes = require('./routes/foodAI');
 const foodPreferencesRoutes = require('./routes/foodPreferences');
 const mealplanRoutes = require('./routes/mealplanRoutes'); 
 const recipeRoutes = require('./routes/meal');
-<<<<<<< HEAD
-const chatlogRoutes = require('./routes/chatBotRoutes'); 
-const fitnessPlanRoutes = require('./routes/fitnessPlanRoutes'); 
-=======
 const chatlogRoutes = require('./routes/chatBotRoutes');
 const imageRoutes = require('./routes/image.routes');
 const waterRoutes = require('./routes/water.routes');
-
->>>>>>> 6d9007094f4c727984b36afdf417c907c94702ae
+const sleepRoutes = require('./routes/sleep.routes');
 
 // const reminderRoutes = require('./routes/reminderRoutes');
 // Add more as you implement them
@@ -41,12 +36,9 @@ app.use('/api/foodPreferences', foodPreferencesRoutes);
 app.use('/api/mealplan', mealplanRoutes ); 
 app.use('/api/meals', recipeRoutes); 
 app.use('/api/chatlogs', chatlogRoutes);
-<<<<<<< HEAD
-app.use('/api/fitness-plans', fitnessPlanRoutes);
-=======
 app.use('/api/image-analysis', imageRoutes);
 app.use('/api/water', waterRoutes);
->>>>>>> 6d9007094f4c727984b36afdf417c907c94702ae
+app.use('/api/sleep', sleepRoutes);
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
