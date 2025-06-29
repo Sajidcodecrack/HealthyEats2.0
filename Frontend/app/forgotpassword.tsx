@@ -73,10 +73,56 @@ const ForgotPassword: React.FC = () => {
     transform: [{ translateY: formOffset.value }],
   }));
 
-  const handleSubmit = () => {
-    // Your submit logic will go here
-    router.push("/otp");
-  };
+  const handleSubmit = async () => {
+  setLoading(true);
+  setError("");
+  setSuccess("");
+
+  try {
+    const response = await fetch(`${API_URL}/api/user/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const contentType = response.headers.get("content-type");
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Something went wrong");
+    }
+
+    // router.navigate("/otp");
+
+    router.push({
+      pathname: "/otp",
+      params: { email, purpose: "reset" }, 
+    });
+
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      setSuccess(data.msg || "Reset link sent!");
+    } else {
+      const text = await response.text();
+      throw new Error("Unexpected response: " + text);
+    }
+
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Forgot password error:", err.message);
+      setError("Failed to send reset link. Please try again.");
+    } else {
+      console.error("Forgot password unknown error:", err);
+      setError("Something went wrong. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   return (
     <KeyboardAvoidingView
