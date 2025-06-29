@@ -1,0 +1,14 @@
+API = http://localhost:3000/api/user/forgot-password
+
+Method = POST
+
+Body (Raw JSON):
+{
+  "email": "your_email@gmail.com"   
+}
+// use the email you registered with
+
+Expected Outcome:
+{
+  "message": "Password reset email sent successfully."
+}
