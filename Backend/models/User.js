@@ -6,7 +6,8 @@ const UsersSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   isVerified: { type: Boolean, default: false },
   registeredAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date }
+  lastLogin: { type: Date },
+  profileImage: { type: String, default: '' }
 });
 
 module.exports = mongoose.model('Users', UsersSchema);

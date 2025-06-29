@@ -46,13 +46,13 @@ interface UserProfile {
 
 // Predefined options for selections
 const FOOD_TYPES = [
-  "Vegetarian", "Vegan", "Pescatarian", "Keto", 
-  "Gluten-Free", "Dairy-Free", "Paleo", "Low-Carb", "Mediterranean"
+  "Vegetarian", "Vegan",  "Keto","Chicken","Beef","Mutton", 
+  "Gluten-Free", "Dairy-Free", "Paleo", "Low-Carb", "High-Carb","None"
 ];
 
 const ALLERGY_OPTIONS = [
-  "Nuts", "Dairy", "Shellfish", "Eggs", 
-  "Soy", "Wheat", "Fish", "Sesame", "None"
+  "Nuts", "Dairy", "Fishes", "Eggs", 
+  "Soy", "Wheat", "Shrimp", "Beef", "None"
 ];
 
 const MEDICAL_CONDITIONS = [
