@@ -1,13 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
+
 
 // Only include your currently existing routes
 const userRoutes = require('./routes/userRoutes');
 const userProfileRoutes = require('./routes/userProfileroutes');
 const foodAIRoutes = require('./routes/foodAI');
 const foodPreferencesRoutes = require('./routes/foodPreferences');
-const mealplanRoutes = require('./routes/mealplanRoutes'); 
+const mealplanRoutes = require('./routes/mealplanRoutes');
 const recipeRoutes = require('./routes/meal');
 const chatlogRoutes = require('./routes/chatBotRoutes');
 const imageRoutes = require('./routes/image.routes');
@@ -15,7 +17,7 @@ const waterRoutes = require('./routes/water.routes');
 const sleepRoutes = require('./routes/sleep.routes');
 const calorieRoutes = require('./routes/calorieRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
-const fitnessPlanRoutes = require('./routes/fitnessPlanRoutes'); 
+const fitnessPlanRoutes = require('./routes/fitnessPlanRoutes');
 
 // const reminderRoutes = require('./routes/reminderRoutes');
 // Add more as you implement them
@@ -36,25 +38,26 @@ app.use('/api/user', userRoutes);
 app.use('/api/user-profile', userProfileRoutes);
 app.use('/api/foodAI', foodAIRoutes);
 app.use('/api/foodPreferences', foodPreferencesRoutes);
-app.use('/api/mealplan', mealplanRoutes ); 
-app.use('/api/meals', recipeRoutes); 
+app.use('/api/mealplan', mealplanRoutes);
+app.use('/api/meals', recipeRoutes);
 app.use('/api/chatlogs', chatlogRoutes);
 app.use('/api/image-analysis', imageRoutes);
 app.use('/api/water', waterRoutes);
 app.use('/api/sleep', sleepRoutes);
 app.use('/api/calorie', calorieRoutes);
 app.use('/api/reminders', reminderRoutes);
-app.use('/api/fitness-plans', fitnessPlanRoutes); // Assuming you have a fitness plan route
+app.use('/api/fitness-plans', fitnessPlanRoutes);
+app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads', 'profiles')));
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
-  console.log('MongoDB connected');
-  app.listen(PORT, () => console.log(` Server listening on port ${PORT}`));
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
+  .then(() => {
+    console.log('MongoDB connected');
+    app.listen(PORT, () => console.log(` Server listening on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });

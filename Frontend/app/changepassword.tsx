@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -23,6 +24,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { useLocalSearchParams } from "expo-router";
 
 const ChangePassword: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -32,8 +34,10 @@ const ChangePassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  
   const router = useRouter();
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
+  const { token,email } = useLocalSearchParams();
 
   // Shared value for animation
   const formOffset = useSharedValue(0);
@@ -80,7 +84,8 @@ const ChangePassword: React.FC = () => {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+
     setError("");
     setSuccess("");
     
@@ -88,16 +93,29 @@ const ChangePassword: React.FC = () => {
     
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess("Password changed successfully!");
-      
-      // Redirect after success
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
-    }, 2000);
+    try {
+  const response = await fetch(`${API_URL}/api/user/reset-password/${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email,newPassword }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.msg || "Something went wrong");
+  }
+
+  setSuccess("Password changed successfully!");
+  setTimeout(() => {
+    router.push("/login");
+  }, 1500);
+} catch (err: any) {
+  setError(err.message);
+} finally {
+  setLoading(false);
+}
+
   };
 
   return (

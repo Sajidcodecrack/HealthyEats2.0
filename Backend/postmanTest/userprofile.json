@@ -56,4 +56,5 @@ Expected Outcome:
     "updatedAt": "2025-06-17T18:52:55.055Z",
     "__v": 0
 }
-
+http://localhost:3000/api/user/upload-profile/686121cf6ee6402b997fec3d (post)
+Upload Profile Image

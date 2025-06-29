@@ -241,18 +241,73 @@ Have questions or concerns about your privacy? We’re here to help.
 
       const data = await response.json();
       if (response.ok) {
-        if (data.token) await saveToken(data.token);
-        if (data.userId) await AsyncStorage.setItem("userId", data.userId);
-        router.replace("/onboardingquestions");
-      } else {
-        setError(data?.msg || "Registration failed. Try again.");
-      }
-    } catch (err) {
-      setError("Unexpected error occurred.");
-    } finally {
-      setLoading(false);
+      // ✅ Instead of routing directly to onboarding, go to OTP screen
+      router.push({
+        pathname: "/otp",
+        params: { email, source
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          : "signup" }, // pass the email for verification
+      });
+    } else {
+      setError(data?.msg || "Registration failed. Try again.");
     }
-  };
+  } catch (err) {
+    console.error("Signup error:", err);
+    setError("Unexpected error occurred.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={{ flex: 1 }}>

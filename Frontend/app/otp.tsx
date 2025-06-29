@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -17,6 +18,7 @@ import { ChevronLeft, Lock, Mail } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Constants from "expo-constants";
+import { useLocalSearchParams } from "expo-router";
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -24,17 +26,19 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-
 const isWeb = Platform.OS === "web";
 
 const OTPVerification: React.FC = () => {
-  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [otp, setOtp] = useState<string[]>(Array(8).fill(""));
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [resendDisabled, setResendDisabled] = useState(true);
   const [countdown, setCountdown] = useState(30);
   const inputs = useRef<Array<TextInput | null>>([]);
   const router = useRouter();
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
+  const { purpose, email } = useLocalSearchParams();
+  const params = useLocalSearchParams();
 
   // Keyboard animation
   const formOffset = useSharedValue(0);
@@ -65,7 +69,7 @@ const OTPVerification: React.FC = () => {
 
   // Resend OTP countdown timer
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (countdown > 0 && resendDisabled) {
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     } else if (countdown === 0) {
@@ -79,21 +83,21 @@ const OTPVerification: React.FC = () => {
   }));
 
   const handleOtpChange = (text: string, index: number) => {
-    // Allow only single digit
-    if (/^\d?$/.test(text)) {
+    // Allow single alphanumeric character (letters and numbers)
+    if (/^[a-zA-Z0-9]?$/i.test(text)) {
       const newOtp = [...otp];
-      newOtp[index] = text;
+      newOtp[index] = text; // did not convert to uppercase 
       setOtp(newOtp);
 
       // Auto focus next input
-      if (text && index < 5 && inputs.current[index + 1]) {
+      if (text && index < 7 && inputs.current[index + 1]) {
         inputs.current[index + 1]?.focus();
       }
       
-      // Auto submit when last digit is entered
-      if (text && index === 5) {
-        handleSubmit();
-      }
+      // // Auto submit when last digit is entered
+      // if (text && index === 7) {
+      //   handleSubmit();
+      // }
     }
   };
 
@@ -103,30 +107,94 @@ const OTPVerification: React.FC = () => {
     }
   };
 
-  const handleResend = () => {
-    setResendDisabled(true);
-    setCountdown(30);
-    // Add resend logic here
-    router.push("/changepassword"); // Example redirect after resend
-  };
+  const handleResend = async () => {
+  setResendDisabled(true);
+  setCountdown(30);
+  setLoading(true);
+  setError("");
 
-  const handleSubmit = () => {
-    setLoading(true);
-    const code = otp.join("");
-    
-    // Validation
-    if (code.length !== 6) {
-      setError("Please enter a 6-digit code");
-      setLoading(false);
-      return;
+  try {
+    const userEmail = email;
+    const response = await fetch(`${API_URL}/api/user/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: userEmail }), // You must have `email` stored in a state or context
+    });
+
+    const contentType = response.headers.get("content-type");
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Failed to resend code.");
     }
-    
-    // Submit logic here
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/changepassword"); // Redirect after successful verification
-    }, 1500);
-  };
+
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      console.log("Resend response:", data.msg || "Code resent successfully.");
+    } else {
+      const text = await response.text();
+      throw new Error("Unexpected response: " + text);
+    }
+  } catch (err: any) {
+    console.error("Resend error:", err.message);
+    setError("Could not resend code. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const handleSubmit = async () => {
+  setLoading(true);
+  const code = otp.join('');
+
+  try {
+    const isSignup = params?.source === 'signup'; // Determine flow
+    const email = params?.email;
+
+    const response = await fetch(
+      `${API_URL}/api/user/${isSignup ? 'verify-signup-otp' : 'verify-reset-token'}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token: code }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      if (isSignup) {
+        //  Store token and user ID using AsyncStorage
+        if (data.token) await AsyncStorage.setItem('token', data.token);
+        if (data.userId) await AsyncStorage.setItem('userId', data.userId);
+
+        //  Navigate to onboarding
+        router.replace('/onboardingquestions');
+      } else {
+        //  Navigate to password reset
+        router.push({
+          pathname: '/changepassword',
+          params: { 
+            token: code,
+            email,
+          },
+        });
+      }
+    } else {
+      console.error("Error Response:", data);
+      setError(data.msg || 'Invalid or expired code');
+    }
+  } catch (err) {
+    console.error('Verification error:', err);
+    setError('Network error. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <KeyboardAvoidingView
@@ -172,14 +240,14 @@ const OTPVerification: React.FC = () => {
               entering={FadeInDown.delay(100)}
               className="text-foreground dark:text-white text-3xl font-bold text-center mb-4"
             >
-              Verify OTP
+              Verify Code
             </Animated.Text>
 
             <Animated.Text
               entering={FadeInDown.delay(200)}
               className="text-gray-600 dark:text-gray-400 text-center text-base mb-8 px-4"
             >
-              Enter the 6-digit code sent to your email
+              Enter the 8-digit alphanumeric code sent to your email
             </Animated.Text>
 
             {error ? (
@@ -196,20 +264,23 @@ const OTPVerification: React.FC = () => {
             {/* OTP Input Boxes */}
             <Animated.View 
               entering={FadeInDown.delay(300)}
-              className="flex-row justify-between mb-8"
+              className="flex-row justify-between mb-8 px-2"
             >
-              {Array(6)
+              {Array(8)
                 .fill(0)
                 .map((_, index) => (
                   <TextInput
                     key={index}
-                    ref={(ref) => (inputs.current[index] = ref)}
+                    ref={(ref) => {
+                      inputs.current[index] = ref;
+                    }}
                     style={styles.otpInput}
-                    className="text-black text-2xl font-bold text-center"
+                    className="text-black dark:text-white text-2xl font-bold text-center"
                     value={otp[index]}
                     onChangeText={(text) => handleOtpChange(text, index)}
                     onKeyPress={(e) => handleKeyPress(e, index)}
-                    keyboardType="number-pad"
+                    keyboardType="default"
+                    autoCapitalize="characters"
                     maxLength={1}
                     selectTextOnFocus
                     autoFocus={index === 0}
@@ -275,12 +346,16 @@ const styles = StyleSheet.create({
     marginTop: -32,
   },
   otpInput: {
-    width: 50,
-    height: 60,
-    borderRadius: 12,
+    width: 40, // Slightly smaller to fit 8 boxes
+    height: 50, // Slightly smaller
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: "#D1D5DB",
     backgroundColor: "#F9FAFB",
+    dark: {
+      backgroundColor: "#1F2937",
+      borderColor: "#374151",
+    },
   },
   submitButton: {
     backgroundColor: "#059669",
