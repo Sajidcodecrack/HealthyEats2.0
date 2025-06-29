@@ -65,7 +65,12 @@ const AddFoodToMeal = () => {
             <Text style={[styles.foodName, { color: colors.text }]}>
               Food Analysis
             </Text>
-            
+            <NutritionCard 
+                title="Carbs" 
+                value={analysisResult.food_name} 
+                colors={colors}
+                unit="g"
+              />
             <View style={styles.nutritionGrid}>
               <NutritionCard 
                 title="Calories" 
