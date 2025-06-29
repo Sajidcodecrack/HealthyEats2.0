@@ -19,6 +19,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { getToken } from "~/lib/tokenManager";
 const { width } = Dimensions.get("window");
+import { useNavigation } from "@react-navigation/native";
+import { ArrowLeft } from "lucide-react-native";
 
 export default function FitnessPlan() {
   const colorScheme = useColorScheme();
@@ -45,7 +47,7 @@ export default function FitnessPlan() {
     equipment: ["dumbbells", "bench"],
     healthConditions: "none",
   });
-
+  const navigation = useNavigation();
   const [fitnessPlan, setFitnessPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -382,7 +384,7 @@ export default function FitnessPlan() {
             </View>
 
             <TouchableOpacity
-              className={`mt-40 rounded-lg ${theme.primary} py-4 items-center`}
+              className={`mt-40 rounded-full ${theme.primary} py-4 items-center `}
               onPress={() => setModalVisible(false)}
             >
               <Text className="text-white text-lg font-semibold">Close</Text>
@@ -401,8 +403,19 @@ export default function FitnessPlan() {
   return (
     <View className={`flex-1 ${theme.background}`}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View className="absolute top-16 left-6">
+            <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[
+              styles.backButton,
+              { backgroundColor: "rgba(255,255,255,0.2)" },
+            ]}
+          >
+            <ArrowLeft size={24} color="#FFF" />
+          </TouchableOpacity>
+          </View>
         <Text
-          className={`text-2xl font-bold mb-6 text-center ${theme.foreground}`}
+          className={`text-xl font-bold mb-6 text-center ${theme.foreground}`}
         >
           Create Your Fitness Plan
         </Text>
@@ -591,5 +604,10 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
     paddingBottom: 40,
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 8,
+    borderRadius: 20,
   },
 });

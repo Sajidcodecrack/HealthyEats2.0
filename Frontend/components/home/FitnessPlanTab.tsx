@@ -213,7 +213,7 @@ const FitnessPlanTab = ({ isDark, navigation }) => {
             </View>
 
             <TouchableOpacity
-              className={`mt-40 rounded-lg ${theme.primary} py-4 items-center`}
+              className={`mt-40 rounded-full ${theme.primary} py-4 items-center `}
               onPress={() => setModalVisible(false)}
             >
               <Text className="text-white text-lg font-semibold">Close</Text>

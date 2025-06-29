@@ -1,0 +1,25 @@
+http://localhost:3000/api/reminders/set (post)
+{
+  "mealType": "lunch",
+  "time": "13:00"
+}
+output:
+{
+    "message": "Reminder set",
+    "reminder": {
+        "user": "685971ed5fd982c78f27a01d", <-- User ID
+        "mealType": "lunch",
+        "time": "13:00",
+        "active": true,
+        "_id": "685fc2ac5cf08a98b82efe73",<-- Reminder Document ID
+        "__v": 0
+    }
+}
+Get active reminder: 
+http://localhost:3000/api/reminders/get (get)
+
+Deactivate a Reminder
+http://localhost:3000/api/reminders/deactivate (PATCH)
+{
+  "mealType": "lunch"
+}

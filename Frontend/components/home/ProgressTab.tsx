@@ -88,13 +88,26 @@ const ProgressTab = ({
       </View>
 
       {/* Goals Cards */}
-      <View className="mb-6">
+       <View className="mb-6">
         {goals.map((goal, index) => (
           <TouchableOpacity
             key={index}
             className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-3xl "
             style={styles.card}
-            onPress={() => console.log(`${goal.label} pressed`)}
+            onPress={() => {
+              if (goal.label === "Track Food") {
+                navigation.navigate("trackfood");
+              }
+              else if (goal.label === "Sleep") {
+                navigation.navigate("SleepTrackingScreen");
+              }
+              else if (goal.label === "Water") {
+                navigation.navigate("WaterIntakeScreen");
+              }
+              else {
+                console.log(`${goal.label} pressed`);
+              }
+            }}
           >
             <View className="flex-row justify-between items-center mb-3">
               <View className="flex-row items-center">

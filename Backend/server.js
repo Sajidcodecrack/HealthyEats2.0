@@ -13,6 +13,9 @@ const chatlogRoutes = require('./routes/chatBotRoutes');
 const imageRoutes = require('./routes/image.routes');
 const waterRoutes = require('./routes/water.routes');
 const sleepRoutes = require('./routes/sleep.routes');
+const calorieRoutes = require('./routes/calorieRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
+const fitnessPlanRoutes = require('./routes/fitnessPlanRoutes'); 
 
 // const reminderRoutes = require('./routes/reminderRoutes');
 // Add more as you implement them
@@ -39,6 +42,9 @@ app.use('/api/chatlogs', chatlogRoutes);
 app.use('/api/image-analysis', imageRoutes);
 app.use('/api/water', waterRoutes);
 app.use('/api/sleep', sleepRoutes);
+app.use('/api/calorie', calorieRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/fitness-plans', fitnessPlanRoutes); // Assuming you have a fitness plan route
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,

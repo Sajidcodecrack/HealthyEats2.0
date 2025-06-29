@@ -100,7 +100,7 @@ export default function HomeScreen() {
         <View className="flex-row justify-between items-center px-6 pt-2 pb-4">
           <View className="flex-row items-center">
             <TouchableOpacity
-              className="border-2 border-emerald-300 rounded-full"
+              className="border-2 border-emerald-500 rounded-full"
               onPress={() => navigation.navigate("profile")}
             >
               <Image
@@ -187,7 +187,7 @@ export default function HomeScreen() {
 
         {/* Tabs */}
         <View
-          className="flex-row justify-between bg-white dark:bg-gray-800 mb-5 mx-5 p-1 rounded-full"
+          className="flex-row justify-between bg-white dark:bg-gray-800 mb-5 mx-5 p-2 rounded-full"
           style={styles.card}
         >
           {["Progress", "Meal Plan", "Fitness Plan"].map((tab) => (
