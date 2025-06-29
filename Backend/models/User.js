@@ -7,7 +7,10 @@ const UsersSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   registeredAt: { type: Date, default: Date.now },
   lastLogin: { type: Date },
-  profileImage: { type: String, default: '' }
+  profileImage: { type: String, default: '' },
+  // Password reset function
+  verificationToken: { type: String },
+  verificationTokenExpires: { type: Date }
 });
 
 module.exports = mongoose.model('Users', UsersSchema);

@@ -8,6 +8,7 @@ const User = require('../models/User');
 
 // Registration
 router.post('/register', userController.register);
+router.post('/verify-signup-otp', userController.verifySignupOtp);
 
 // Login
 router.post('/login', userController.login);
@@ -46,5 +47,10 @@ router.post('/upload-profile/:id', upload.single('profile'), async (req, res) =>
     res.status(500).json({ msg: 'Server error while uploading image' });
   }
 });
+// Forgot & Reset Password
+router.post('/forgot-password', userController.forgotPassword);
+router.post('/verify-reset-token', userController.verifyResetToken);
+router.post('/reset-password/:token', userController.resetPassword);
+
 
 module.exports = router;
