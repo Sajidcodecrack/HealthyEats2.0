@@ -97,6 +97,7 @@ export default function RootLayout() {
           <Stack.Screen name="AddFoodToMeal" />
           <Stack.Screen name="SleepTrackingScreen" />
           <Stack.Screen name="WaterIntakeScreen" />
+          <Stack.Screen name="privacy-policy" />
           <Stack.Screen name="home" options={{ headerShown: false,gestureEnabled: false }} />
         </Stack>
       </PaperProvider>

@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   Text,
   View,
@@ -8,24 +8,56 @@ import {
   useColorScheme,
   StyleSheet,
   StatusBar,
-  Alert
+  Alert,
 } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { Settings, Lock, Heart, Target, LogOut,ArrowLeft } from "lucide-react-native";
+import {
+  Settings,
+  Lock,
+  Heart,
+  Target,
+  LogOut,
+  ArrowLeft,
+} from "lucide-react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 import { deleteToken } from "../lib/tokenManager"; // Import deleteToken
-
+import { LinearGradient } from "expo-linear-gradient"; // Import LinearGradient for background
+import Constants from "expo-constants"; // Import Constants for API URL
 
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const navigation = useNavigation();
+  const [userData, setUserData] = useState({ name: "", profileImage: "" });
 
-  const profileImage = require("../assets/images/profile.jpeg");
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
 
   const router = useRouter(); // Initialize router
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) return;
+
+        const res = await fetch(`${API_URL}/api/user/${userId}`);
+        const data = await res.json();
+        setUserData({
+          name: data.name,
+          profileImage: data.profileImage
+            ? `${API_URL}${data.profileImage}`
+            : null,
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   const handleLogout = async () => {
     Alert.alert(
       "Logout",
@@ -65,93 +97,89 @@ export default function ProfileScreen() {
       { cancelable: true }
     );
   };
-
+  const getInitials = (name) => {
+    if (!name) return "U";
+    const names = name.split(" ");
+    return names
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
   return (
     <View className="flex-1 bg-emerald-50 dark:bg-gray-900">
+      <View className="absolute top-16 left-5 z-10">
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[
+            styles.backButton,
+            { backgroundColor: "rgba(255,255,255,0.2)" },
+          ]}
+        >
+          <ArrowLeft size={24} color="#FFF" />
+        </TouchableOpacity>
+      </View>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header Section */}
-        <View className="relative h-96 bg-emerald-600 dark:bg-emerald-800 rounded-b-3xl items-center justify-center overflow-hidden ">
+        <View className="relative h-96 bg-transparent rounded-b-3xl items-center justify-center overflow-hidden ">
           {/* Background decorative elements */}
-          <View className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500 dark:bg-emerald-700 rounded-full opacity-20" />
-          <View className="absolute -bottom-24 -left-20 w-80 h-80 bg-emerald-500 dark:bg-emerald-700 rounded-full opacity-20" />
-          
-          {/* Top navigation */}
-          <View className="absolute top-14 left-4">
-            <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={[
-              styles.backButton,
-              { backgroundColor: "rgba(255,255,255,0.2)" },
-            ]}
+          <LinearGradient
+            colors={["#065f46", "#059669"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              height: 300,
+              width: "100%",
+              borderBottomLeftRadius: 24,
+              borderBottomRightRadius: 24,
+              marginTop: -80,
+              paddingTop: 24,
+            }}
           >
-            <ArrowLeft size={24} color="#FFF" />
-          </TouchableOpacity>
-          </View>
-          
+            <View className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500  rounded-full opacity-20" />
+            <View className="absolute -bottom-24 -left-20 w-80 h-80 bg-emerald-500 rounded-full opacity-20" />
 
-          {/* Profile Content */}
-          <View className="mt-8 border-4 border-emerald-500 dark:border-emerald-700 rounded-full shadow-lg">
-            <Image
-              source={profileImage}
-              className="w-32 h-32 rounded-full"
-            />
-          </View>
+            {/* Top navigation */}
 
-          <Text className="text-white text-2xl font-bold mt-2">
-            Sahil Al Farib
-          </Text>
-          <Text className="text-emerald-100 text-sm mt-1">
-            Wellness Journey • 2 Years
-          </Text>
-          
-          <View className="flex-row mt-2">
-            <MaterialCommunityIcons 
-              name="medal" 
-              size={18} 
-              color="#fcd34d" 
-            />
-            <Text className="text-emerald-100 ml-1">Pro Member</Text>
-          </View>
-        </View>
+            {/* Profile Content */}
+            <View className="mt-8 border-4 border-emerald-500 dark:border-emerald-700 rounded-full shadow-lg">
+              {userData.profileImage ? (
+                <Image
+                  source={{ uri: userData.profileImage }}
+                  className="w-32 h-32 rounded-full"
+                />
+              ) : (
+                <View className="w-32 h-32 rounded-full bg-emerald-500 items-center justify-center">
+                <Text className="text-white text-4xl font-bold">
+                  {getInitials(userData?.name)}
+                </Text>
+                </View>
+              )}
+            </View>
 
-        {/* Stats Section */}
-        <View className="flex-row justify-around py-5 -mt-12 bg-white dark:bg-gray-800 mx-5 rounded-3xl shadow-lg" style={styles.cardShadow}>
-          <View className="items-center">
-            <Text className="text-emerald-700 dark:text-emerald-400 text-2xl font-bold">
-              120
+            <Text className="text-white text-2xl font-bold mt-2">
+              {userData.name || "Loading..."}
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">Workouts</Text>
-          </View>
-          <View className="items-center">
-            <Text className="text-emerald-700 dark:text-emerald-400 text-2xl font-bold">
-              8.4k
+            <Text className="text-emerald-100 text-sm mt-1">
+              Wellness Journey • 2 Years
             </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">Calories</Text>
-          </View>
-          <View className="items-center">
-            <Text className="text-emerald-700 dark:text-emerald-400 text-2xl font-bold">
-              3.7k
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">Miles</Text>
-          </View>
-          <View className="items-center">
-            <Text className="text-emerald-700 dark:text-emerald-400 text-2xl font-bold">
-              98%
-            </Text>
-            <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">Consistency</Text>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* Menu Items */}
-        <View className="mx-5 mt-6">
-          <Text className="text-emerald-800 dark:text-emerald-300 text-lg font-semibold mb-3">My Account</Text>
-          
+        <View className="mx-5 -mt-10">
+          <Text className="text-emerald-800 dark:text-emerald-300 text-lg font-semibold mb-6">
+            My Account
+          </Text>
+
           <ProfileMenuItem
             icon={<Target size={24} color="#059669" />}
-            label="My Goals"
+            label="Personal Details"
             isDark={isDark}
-            onPress={() => console.log("My Goals pressed")}
+            onPress={() => router.push("/personal-details")} // Add this navigation
           />
           <ProfileMenuItem
             icon={<Heart size={24} color="#059669" />}
@@ -159,9 +187,11 @@ export default function ProfileScreen() {
             isDark={isDark}
             onPress={() => console.log("Health Metrics pressed")}
           />
-          
-          <Text className="text-emerald-800 dark:text-emerald-300 text-lg font-semibold mb-3 mt-6">Preferences</Text>
-          
+
+          <Text className="text-emerald-800 dark:text-emerald-300 text-lg font-semibold mb-6 mt-6">
+            Preferences
+          </Text>
+
           <ProfileMenuItem
             icon={<Settings size={24} color="#059669" />}
             label="Settings"
@@ -172,18 +202,12 @@ export default function ProfileScreen() {
             icon={<Lock size={24} color="#059669" />}
             label="Privacy Policy"
             isDark={isDark}
-            onPress={() => console.log("Privacy Policy pressed")}
-          />
-          <ProfileMenuItem
-            icon={<Feather name="help-circle" size={24} color="#059669" />}
-            label="Help & Support"
-            isDark={isDark}
-            onPress={() => console.log("Help & Support pressed")}
+            onPress={() => router.push("/privacy-policy")} // Update this line
           />
         </View>
 
         {/* Logout Button */}
-        <View className="mx-5 mt-8 mb-10">
+        <View className="mx-5 mt-1 mb-10">
           <TouchableOpacity
             className="flex-row items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700"
             style={styles.cardShadow}
@@ -196,7 +220,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-      
     </View>
   );
 }

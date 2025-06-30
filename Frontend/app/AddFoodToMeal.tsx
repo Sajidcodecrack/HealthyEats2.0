@@ -33,7 +33,69 @@ const AddFoodToMeal = () => {
     sectionTitle: isDarkMode ? "#e5e7eb" : "#065f46",
     border: isDarkMode ? "#374151" : "#d1fae5",
     disabled: isDarkMode ? "#444444" : "#E0E0E0",
+    foodNameBg: isDarkMode ? "#065f46" : "#059669",
+    foodNameText: isDarkMode ? "#e0f2fe" : "#065f46",
   };
+
+  // Function to parse and format nutrition values
+  const parseNutritionValue = (value: any, unit: string) => {
+    if (value === undefined || value === null) return "N/A";
+    
+    try {
+      // Handle JSON strings
+      if (typeof value === 'string') {
+        // Check if it's a JSON string
+        if (value.startsWith('{') || value.startsWith('[')) {
+          const parsed = JSON.parse(value);
+          // If it's an object, extract the value
+          if (typeof parsed === 'object') {
+            return `${Object.values(parsed)[0]} ${unit}`;
+          }
+          return `${parsed} ${unit}`;
+        }
+        return value;
+      }
+      
+      // Handle numbers
+      if (typeof value === 'number') {
+        return `${value} ${unit}`;
+      }
+      
+      // Handle objects
+      if (typeof value === 'object') {
+        return `${Object.values(value)[0]} ${unit}`;
+      }
+      
+      return `${value} ${unit}`;
+    } catch (e) {
+      console.error("Error parsing nutrition value:", e);
+      return "N/A";
+    }
+  };
+
+  // Extract nutrition data with proper units
+  const nutritionData = [
+    { title: "Calories", 
+      value: calories, 
+      unit: "cal",
+      key: "calories" 
+    },
+    { title: "Carbs", 
+      value: analysisResult.carbs_per_100g || analysisResult.carbs, 
+      unit: "",
+      key: "carbs" 
+    },
+    { title: "Protein", 
+      value: analysisResult.protein_per_100g || analysisResult.protein, 
+      unit: "",
+      key: "protein" 
+    },
+    { title: "Fiber", 
+      value: analysisResult.fiber_per_100g || analysisResult.fiber, 
+      unit: "",
+      key: "fiber" 
+    },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -46,7 +108,7 @@ const AddFoodToMeal = () => {
         >
           <ArrowLeft size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Food</Text>
+        <Text style={styles.headerTitle}>Analysis</Text>
         <View style={{ width: 44 }} /> 
       </View>
 
@@ -62,114 +124,73 @@ const AddFoodToMeal = () => {
           />
           
           <View style={[styles.foodInfo, { backgroundColor: colors.card }, styles.card, styles.cardShadow]}>
-            <Text style={[styles.foodName, { color: colors.text }]}>
-              Food Analysis
-            </Text>
-            <NutritionCard 
-                title="Carbs" 
-                value={analysisResult.food_name} 
-                colors={colors}
-                unit="g"
-              />
-            <View style={styles.nutritionGrid}>
-              <NutritionCard 
-                title="Calories" 
-                value={calories || "N/A"} 
-                colors={colors}
-                unit="cal"
-              />
-              <NutritionCard 
-                title="Carbs" 
-                value={analysisResult.carbs_per_100g} 
-                colors={colors}
-                unit="g"
-              />
-              <NutritionCard 
-                title="Protein" 
-                value={analysisResult.protein_per_100g} 
-                colors={colors}
-                unit="g"
-              />
-              <NutritionCard 
-                title="Fiber" 
-                value={analysisResult.fiber_per_100g} 
-                colors={colors}
-                unit="g"
-              />
+            {/* Food Name Section */}
+            <View style={[
+              styles.foodNameContainer, 
+              { backgroundColor: colors.foodNameBg }
+            ]}>
+              <Text 
+                numberOfLines={2}
+                ellipsizeMode="tail"
+                style={[styles.foodName, { color: colors.foodNameText }]}
+              >
+                {analysisResult.food_name || "Food Item"}
+              </Text>
             </View>
             
-            <Text style={[styles.sugarLevel, { color: colors.secondaryText }]}>
-              Sugar Level: {analysisResult.sugar_level || "N/A"}
-            </Text>
-          </View>
-          
-          <Text style={[styles.selectMeal, { color: colors.sectionTitle }]}>
-            Select Meal:
-          </Text>
-          
-          <View style={styles.mealButtons}>
-            {meals.map((meal) => (
-              <TouchableOpacity
-                key={meal}
-                style={[
-                  styles.mealButton,
-                  styles.cardShadow,
-                  { 
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                    borderWidth: 1
-                  },
-                  selectedMeal === meal && {
-                    backgroundColor: colors.button,
-                    borderColor: colors.button
-                  }
-                ]}
-                onPress={() => setSelectedMeal(meal)}
-              >
-                <Text style={[
-                  styles.mealButtonText,
-                  { color: colors.text },
-                  selectedMeal === meal && { color: colors.buttonText }
-                ]}>
-                  {meal.charAt(0).toUpperCase() + meal.slice(1)}
+            {/* Nutrition Grid */}
+            <View style={styles.nutritionGrid}>
+              {nutritionData.map((item) => (
+                <NutritionCard 
+                  key={item.key}
+                  title={item.title}
+                  value={parseNutritionValue(item.value, item.unit)}
+                  colors={colors}
+                />
+              ))}
+            </View>
+            
+            {/* Additional Info */}
+            <View style={styles.additionalInfo}>
+              {analysisResult.sugar_level && (
+                <Text style={[styles.infoText, { color: colors.secondaryText }]}>
+                  Sugar Level: {analysisResult.sugar_level}
                 </Text>
-              </TouchableOpacity>
-            ))}
+              )}
+              
+              {analysisResult.health_rating && (
+                <Text style={[styles.infoText, { color: colors.secondaryText }]}>
+                  Health Rating: {analysisResult.health_rating}
+                </Text>
+              )}
+              
+              {analysisResult.description && (
+                <Text style={[styles.descriptionText, { color: colors.secondaryText }]}>
+                  {analysisResult.description}
+                </Text>
+              )}
+            </View>
           </View>
           
-          <TouchableOpacity
-            style={[
-              styles.addButton,
-              styles.cardShadow,
-              { backgroundColor: colors.button },
-              !selectedMeal && { backgroundColor: colors.disabled }
-            ]}
-            onPress={() => {
-              if (selectedMeal) {
-                navigation.navigate("TrackFood", { 
-                  meal: selectedMeal, 
-                  calories: calories
-                });
-              }
-            }}
-            disabled={!selectedMeal}
-          >
-            <Text style={styles.addButtonText}>
-              Add to {selectedMeal ? selectedMeal : "Meal"}
-            </Text>
-          </TouchableOpacity>
+          
+          
         </View>
       </ScrollView>
     </View>
   );
 };
-const NutritionCard = ({ title, value, colors, unit }) => (
+
+const NutritionCard = ({ title, value, colors }) => (
   <View style={[styles.nutritionCard, { backgroundColor: colors.background }]}>
     <Text style={[styles.nutritionTitle, { color: colors.secondaryText }]}>
       {title}
     </Text>
-    <Text style={[styles.nutritionValue, { color: colors.text }]}>
-      {value || "N/A"} {value && unit ? unit : ""}
+    <Text 
+      style={[styles.nutritionValue, { color: colors.text }]}
+      numberOfLines={2}
+      ellipsizeMode="tail"
+    >
+      {value}
     </Text>
   </View>
 );
@@ -215,42 +236,65 @@ const styles = StyleSheet.create({
   foodInfo: {
     width: "100%",
     borderRadius: 24,
-    padding: 24,
+    padding: 0,
+    overflow: "hidden",
     marginBottom: 25,
   },
+  foodNameContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginBottom: 15,
+  },
   foodName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
-    marginBottom: 20,
     textAlign: "center",
+    lineHeight: 28,
   },
   nutritionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 15,
+    paddingHorizontal: 16,
   },
   nutritionCard: {
     width: "48%",
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     marginBottom: 15,
     alignItems: "center",
+    minHeight: 80,
+    justifyContent: "center",
   },
   nutritionTitle: {
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: 14,
+    marginBottom: 5,
+    textAlign: "center",
   },
   nutritionValue: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "700",
+    textAlign: "center",
   },
-  sugarLevel: {
+  additionalInfo: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  infoText: {
     fontSize: 16,
     fontWeight: "600",
-    marginTop: 10,
     textAlign: "center",
+    marginBottom: 8,
+  },
+  descriptionText: {
+    fontSize: 14,
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
   },
   selectMeal: {
     fontSize: 20,

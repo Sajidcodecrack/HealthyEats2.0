@@ -86,6 +86,7 @@ exports.verifySignupOtp = async (req, res) => {
     res.status(201).json({
       msg: 'Registration successful!',
       token, // Send the generated token
+      jwtToken, // Send the JWT token
       userId: user._id, // Send the new user's ID
       user: { // Optional: send back basic user info, consistent with login
         id: user._id,

@@ -46,8 +46,8 @@ interface UserProfile {
 
 // Predefined options for selections
 const FOOD_TYPES = [
-  "Vegetarian", "Vegan",  "Keto","Chicken","Beef","Mutton", 
-  "Gluten-Free", "Dairy-Free", "Paleo", "Low-Carb", "High-Carb","None"
+  "Vegetarian", "Vegan",  "Keto","Chicken","Beef","Mutton","Halal", 
+  "Gluten-Free", "Dairy-Free", "Low-Carb", "High-Carb","Any"
 ];
 
 const ALLERGY_OPTIONS = [
@@ -57,7 +57,7 @@ const ALLERGY_OPTIONS = [
 
 const MEDICAL_CONDITIONS = [
   "Diabetes", "Heart Disease", "High Blood Pressure", 
-  "High Cholesterol", "Obesity", "PCOS", "Thyroid", "Kidney Disease"
+  "High Cholesterol", "Obesity", "PCOS", "Thyroid", "Kidney Disease", "None"
 ];
 
 export default function FoodPrefScreen() {

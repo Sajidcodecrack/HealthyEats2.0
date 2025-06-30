@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -7,15 +7,22 @@ import {
   TouchableOpacity,
   useColorScheme,
   StyleSheet,
+  ActivityIndicator,
+  Platform,
+  Alert,
 } from "react-native";
-import { Feather, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Sparkles } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import ProgressTab from "../components/home/ProgressTab";
 import MealPlanTab from "../components/home/MealPlanTab";
 import FitnessPlanTab from "../components/home/FitnessPlanTab";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getToken } from "../lib/tokenManager";
+import Constants from "expo-constants";
+import { Scan, ArrowLeft } from "lucide-react-native";
 // Background images for quick actions
 const mealPlanImage = require("../assets/images/meal.jpg");
 const fitnessPlanImage = require("../assets/images/fitness.jpg");
@@ -25,6 +32,50 @@ export default function HomeScreen() {
   const isDark = colorScheme === "dark";
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState("Progress");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const isDarkMode = colorScheme === "dark";
+  const API_URL = Constants.expoConfig?.extra?.apiUrl;
+  const colors = {
+    primary: isDarkMode ? "#059669" : "#059669",
+    darkPrimary: isDarkMode ? "#065f46" : "#065f46",
+    background: isDarkMode ? "#0f172a" : "#f0fdf4",
+    card: isDarkMode ? "#1e293b" : "#ffffff",
+    text: isDarkMode ? "#f1f5f9" : "#1f2937",
+    secondaryText: isDarkMode ? "#94a3b8" : "#64748b",
+    border: isDarkMode ? "#334155" : "#d1fae5",
+    inputBackground: isDarkMode ? "#1e293b" : "#f0fdf4",
+    aiBubble: isDarkMode ? "#1e293b" : "#f0fdf4",
+    userBubble: isDarkMode ? "#065f46" : "#059669",
+    disabledButton: isDarkMode ? "#1e3a5f" : "#a7f3d0",
+  };
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) return;
+
+        const res = await fetch(`${API_URL}/api/user/${userId}`);
+        const data = await res.json();
+
+        setUser({
+          name: data.name,
+          profileImage: data.profileImage
+            ? `${API_URL}${data.profileImage}`
+            : null,
+        });
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false); // <-- Critical line
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   // Stats data
   const stats = [
@@ -44,6 +95,20 @@ export default function HomeScreen() {
       progress: 65,
     },
     {
+      icon: "cup-water",
+      label: "Water",
+      goal: "Goal: 8 glasses",
+      color: "#0EA5E9",
+      progress: 50,
+    },
+    {
+      icon: "bed",
+      label: "Sleep",
+      goal: "Goal: 8hr",
+      color: "#6366F1",
+      progress: 75,
+    },
+    {
       icon: "weight-lifter",
       label: "Workout",
       goal: "Goal: 620 cal",
@@ -57,21 +122,179 @@ export default function HomeScreen() {
       color: "#8B5CF6",
       progress: 0,
     },
-    {
-      icon: "bed",
-      label: "Sleep",
-      goal: "Goal: 8hr",
-      color: "#6366F1",
-      progress: 75,
-    },
-    {
-      icon: "cup-water",
-      label: "Water",
-      goal: "Goal: 8 glasses",
-      color: "#0EA5E9",
-      progress: 50,
-    },
   ];
+  function showPhotoOptions() {
+    const buttons = [
+      { text: "Take Photo", onPress: () => launchPicker("camera") },
+      { text: "Upload from Gallery", onPress: () => launchPicker("library") },
+      { text: "Cancel", style: "cancel" as const },
+    ];
+    if (Platform.OS === "ios") {
+      Alert.alert("", "", buttons);
+    } else {
+      Alert.alert("Select Option", undefined, buttons);
+    }
+  }
+  // Show native options dialog
+  function showPhotoOptions() {
+    const buttons = [
+      { text: "Take Photo", onPress: () => launchPicker("camera") },
+      { text: "Upload from Gallery", onPress: () => launchPicker("library") },
+      { text: "Cancel", style: "cancel" as const },
+    ];
+    if (Platform.OS === "ios") {
+      Alert.alert("", "", buttons);
+    } else {
+      Alert.alert("Select Option", undefined, buttons);
+    }
+  }
+
+  // Launch camera or library
+  async function launchPicker(mode: "camera" | "library"): Promise<void> {
+    try {
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.1,
+      };
+      const result =
+        mode === "camera"
+          ? await ImagePicker.launchCameraAsync(options)
+          : await ImagePicker.launchImageLibraryAsync(options);
+
+      if (!result.canceled && result.assets?.length) {
+        processImage(result.assets[0]);
+      }
+    } catch (err) {
+      console.error("ImagePicker error:", err);
+    }
+  }
+
+  // Send to backend and navigate
+  async function processImage(image: { uri: string }) {
+    setIsUploading(true); // Start loading
+    if (!API_URL) {
+      console.error("API_URL not defined");
+      Alert.alert("Error", "API URL is not configured");
+      return;
+    }
+
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        Alert.alert("Error", "User not authenticated");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("image", {
+        uri: image.uri,
+        name: "photo.jpg",
+        type: "image/jpeg",
+      } as any);
+
+      const resp = await fetch(`${API_URL}/api/image-analysis/upload`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Server error: ${resp.status} ${resp.statusText}`);
+      }
+
+      const data = await resp.json();
+
+      let analysisResult;
+      if (data.data?.analysisResult) {
+        analysisResult = data.data.analysisResult;
+      } else if (data.analysisResult) {
+        analysisResult = data.analysisResult;
+      } else if (data.data) {
+        analysisResult = data.data;
+      } else {
+        analysisResult = data;
+      }
+
+      if (!analysisResult) {
+        console.error("Analysis result not found in response");
+        throw new Error("Could not find food analysis data in server response");
+      }
+
+      let calories = 0;
+      let caloriesString = "";
+
+      if (analysisResult.calories_per_100g) {
+        caloriesString = analysisResult.calories_per_100g;
+      } else if (analysisResult.calories) {
+        caloriesString = analysisResult.calories;
+      } else if (analysisResult.Calories) {
+        caloriesString = analysisResult.Calories;
+      }
+
+      if (caloriesString && typeof caloriesString === "string") {
+        const calorieNumbers = caloriesString
+          .replace(/kcal/gi, "")
+          .replace(/[^\d-]/g, "")
+          .split("-")
+          .map((s) => {
+            const num = parseInt(s.trim());
+            return isNaN(num) ? 0 : num;
+          })
+          .filter((num) => num > 0);
+
+        if (calorieNumbers.length > 0) {
+          calories = Math.round(
+            calorieNumbers.reduce((a, b) => a + b, 0) / calorieNumbers.length
+          );
+        }
+      }
+
+      if (calories === 0) {
+        calories = 250;
+      }
+
+      navigation.navigate("AddFoodToMeal", {
+        analysisResult,
+        imageUri: image.uri,
+        calories,
+      });
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      Alert.alert(
+        "Upload Error",
+        err.message || "Failed to process image. Please try again."
+      );
+    }
+    setIsUploading(false); // Stop loading
+  }
+  // Function to get user initials for avatar
+  const getInitials = (name) => {
+    if (!name) return "U";
+    const names = name.split(" ");
+    return names
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  if (loading) {
+    return (
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDark ? "bg-gray-900" : "bg-emerald-50"
+        }`}
+      >
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    );
+  }
 
   return (
     <View
@@ -103,35 +326,48 @@ export default function HomeScreen() {
               className="border-2 border-emerald-500 rounded-full"
               onPress={() => navigation.navigate("profile")}
             >
-              <Image
-                source={require("../assets/images/profile.jpeg")}
-                className="w-14 h-14 rounded-full"
-              />
+              {user?.profileImage ? (
+                <Image
+                  source={{ uri: user.profileImage }}
+                  className="w-14 h-14 rounded-full z-10"
+                />
+              ) : (
+                <View className="w-14 h-14 rounded-full bg-emerald-300 items-center justify-center">
+                  <Text className="text-white text-xl font-bold">
+                    {getInitials(user?.name)}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
             <View className="ml-3">
               <Text className="text-foreground text-lg font-semibold">
                 Welcome back,
               </Text>
-              <Text className="text-foreground text-xl font-bold">Sahil!</Text>
+              <Text className="text-foreground text-xl font-bold">
+                {user?.name ? user.name.split(" ")[0] : "User"}!
+              </Text>
             </View>
           </View>
 
           <TouchableOpacity
-            className="flex-row items-center px-4 py-2 rounded-full"
             style={[
-              styles.upgradeButton,
-              {
-                backgroundColor: isDark
-                  ? "rgba(255, 255, 255, 0.2)"
-                  : "rgba(255, 255, 255, 0.3)",
-                borderColor: isDark
-                  ? "rgba(255, 255, 255, 0.5)"
-                  : "rgba(0, 0, 0, 0.5)",
-              },
+              styles.fab,
+              styles.fabShadow,
+              { backgroundColor: colors.buttonBg },
             ]}
+            onPress={showPhotoOptions}
+            disabled={isUploading}
           >
-            <Feather name="award" size={18} color="#10b981" />
-            <Text className="text-foreground ml-2 font-bold">Pro</Text>
+            {isUploading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <LinearGradient
+              colors={[colors.primary, colors.darkPrimary]}
+              style={styles.cam}
+            >
+              <Scan size={28} color="white" />
+              </LinearGradient>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -237,13 +473,37 @@ export default function HomeScreen() {
         style={styles.fab}
         onPress={() => navigation.navigate("aichat")}
       >
-        <Sparkles size={28} color="white" />
+        <LinearGradient
+          colors={[colors.primary, colors.darkPrimary]}
+          style={styles.tutorAvatar}
+        >
+          <Sparkles size={28} color="#FFF" />
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fabShadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  tutorAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
   card: {
     shadowColor: "#000",
     shadowOffset: {
@@ -269,5 +529,14 @@ const styles = StyleSheet.create({
   upgradeButton: {
     borderWidth: 1,
     borderRadius: 20,
+  },
+  cam: {
+    width: 56,
+    height: 56,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
   },
 });

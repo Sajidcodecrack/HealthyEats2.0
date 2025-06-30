@@ -246,56 +246,6 @@ Have questions or concerns about your privacy? We’re here to help.
         pathname: "/otp",
         params: { email, source
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
           : "signup" }, // pass the email for verification
       });
     } else {

@@ -26,6 +26,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { saveToken } from "../lib/tokenManager"; // Adjust the import path as needed
 const isWeb = Platform.OS === "web";
 
 const OTPVerification: React.FC = () => {
@@ -168,8 +169,8 @@ const OTPVerification: React.FC = () => {
     if (response.ok) {
       if (isSignup) {
         //  Store token and user ID using AsyncStorage
-        if (data.token) await AsyncStorage.setItem('token', data.token);
-        if (data.userId) await AsyncStorage.setItem('userId', data.userId);
+        await saveToken(data.jwtToken);
+        await AsyncStorage.setItem("userId", data.user.id);
 
         //  Navigate to onboarding
         router.replace('/onboardingquestions');
@@ -264,7 +265,7 @@ const OTPVerification: React.FC = () => {
             {/* OTP Input Boxes */}
             <Animated.View 
               entering={FadeInDown.delay(300)}
-              className="flex-row justify-between mb-8 px-2"
+              className="flex-row justify-center gap-1 mb-8 "
             >
               {Array(8)
                 .fill(0)
@@ -275,7 +276,7 @@ const OTPVerification: React.FC = () => {
                       inputs.current[index] = ref;
                     }}
                     style={styles.otpInput}
-                    className="text-black dark:text-white text-2xl font-bold text-center"
+                    className="text-black text-2xl font-bold text-center"
                     value={otp[index]}
                     onChangeText={(text) => handleOtpChange(text, index)}
                     onKeyPress={(e) => handleKeyPress(e, index)}

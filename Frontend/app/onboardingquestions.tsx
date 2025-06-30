@@ -544,22 +544,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 15,
-    borderWidth: 1,
-    borderColor: "#d1fae5",
+    borderWidth: 2,
+    borderColor: "#059669",
     marginBottom: 10,
     width: "48%",
     alignItems: "center",
   },
   selectedGenderOption: {
     borderColor: "#059669",
-    backgroundColor: "#d1fae5",
+    backgroundColor: "#0fbf89",
   },
   genderOptionText: {
     fontSize: 16,
     color: "#065f46",
   },
   selectedGenderOptionText: {
-    color: "#065f46",
+    color: "#fff",
     fontWeight: "bold",
   },
   navigation: {
@@ -576,8 +576,8 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: "#d1fae5",
+    borderWidth: 2,
+    borderColor: "#065f46",
   },
   backButtonText: {
     fontSize: 16,
