@@ -123,18 +123,7 @@ export default function HomeScreen() {
       progress: 0,
     },
   ];
-  function showPhotoOptions() {
-    const buttons = [
-      { text: "Take Photo", onPress: () => launchPicker("camera") },
-      { text: "Upload from Gallery", onPress: () => launchPicker("library") },
-      { text: "Cancel", style: "cancel" as const },
-    ];
-    if (Platform.OS === "ios") {
-      Alert.alert("", "", buttons);
-    } else {
-      Alert.alert("Select Option", undefined, buttons);
-    }
-  }
+  
   // Show native options dialog
   function showPhotoOptions() {
     const buttons = [

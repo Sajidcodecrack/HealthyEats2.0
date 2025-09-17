@@ -153,9 +153,9 @@ export default function ProfileScreen() {
                 />
               ) : (
                 <View className="w-32 h-32 rounded-full bg-emerald-500 items-center justify-center">
-                <Text className="text-white text-4xl font-bold">
-                  {getInitials(userData?.name)}
-                </Text>
+                  <Text className="text-white text-4xl font-bold">
+                    {getInitials(userData?.name)}
+                  </Text>
                 </View>
               )}
             </View>
@@ -185,7 +185,7 @@ export default function ProfileScreen() {
             icon={<Heart size={24} color="#059669" />}
             label="Health Metrics"
             isDark={isDark}
-            onPress={() => console.log("Health Metrics pressed")}
+            onPress={() => Alert.alert("Coming Soon", "Feature coming soon")}
           />
 
           <Text className="text-emerald-800 dark:text-emerald-300 text-lg font-semibold mb-6 mt-6">
@@ -196,7 +196,7 @@ export default function ProfileScreen() {
             icon={<Settings size={24} color="#059669" />}
             label="Settings"
             isDark={isDark}
-            onPress={() => console.log("Settings pressed")}
+            onPress={() => Alert.alert("Coming Soon", "Feature coming soon")}
           />
           <ProfileMenuItem
             icon={<Lock size={24} color="#059669" />}

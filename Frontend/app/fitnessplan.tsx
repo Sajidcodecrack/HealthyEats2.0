@@ -403,7 +403,7 @@ export default function FitnessPlan() {
   return (
     <View className={`flex-1 ${theme.background}`}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View className="absolute top-16 left-6">
+        <View className="absolute top-16 left-6 z-10">
             <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={[

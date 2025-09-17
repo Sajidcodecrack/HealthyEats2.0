@@ -493,6 +493,87 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   // Add modal styles if needed
+  modalContainer: {
+      flex: 1,
+    },
+    modalHeader: {
+      height: 200,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: 60,
+      paddingHorizontal: 20,
+      flexDirection: "row",
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+    },
+    modalTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: "white",
+      textAlign: "center",
+      flex: 1,
+    },
+    closeButton: {
+      position: "absolute",
+      right: 20,
+      top: 50,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    closeButtonText: {
+      color: "white",
+      fontSize: 24,
+      fontWeight: "bold",
+    },
+    modalContent: {
+      flex: 1,
+      padding: 20,
+    },
+    centeredModal: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    ingredientsSection: {
+      marginBottom: 25,
+    },
+    stepsSection: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      marginBottom: 15,
+    },
+    ingredientItem: {
+      fontSize: 16,
+      marginLeft: 10,
+      marginBottom: 8,
+      lineHeight: 22,
+    },
+    stepItem: {
+      flexDirection: "row",
+      marginBottom: 15,
+      alignItems: "flex-start",
+    },
+    stepNumber: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 10,
+      marginTop: 3,
+    },
+    stepText: {
+      fontSize: 16,
+      flex: 1,
+      lineHeight: 22,
+    },
 });
 
 export default MealPlanTab;

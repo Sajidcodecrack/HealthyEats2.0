@@ -1,5 +1,12 @@
 import React from "react";
-import { Text, View, TouchableOpacity, ImageBackground, Image } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  ImageBackground,
+  Image,
+  Alert
+} from "react-native";
 import { Feather, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -88,7 +95,7 @@ const ProgressTab = ({
       </View>
 
       {/* Goals Cards */}
-       <View className="mb-6">
+      <View className="mb-6">
         {goals.map((goal, index) => (
           <TouchableOpacity
             key={index}
@@ -97,14 +104,21 @@ const ProgressTab = ({
             onPress={() => {
               if (goal.label === "Track Food") {
                 navigation.navigate("trackfood");
-              }
-              else if (goal.label === "Sleep") {
+              } else if (goal.label === "Sleep") {
                 navigation.navigate("SleepTrackingScreen");
-              }
-              else if (goal.label === "Water") {
+              } else if (goal.label === "Water") {
                 navigation.navigate("WaterIntakeScreen");
-              }
-              else {
+              } else if (goal.label === "Workout") {
+                Alert.alert(
+                  "Coming Soon",
+                  "Workout tracking feature coming soon!"
+                );
+              } else if (goal.label === "Steps") {
+                Alert.alert(
+                  "Coming Soon",
+                  "Step tracking feature coming soon!"
+                );
+              } else {
                 console.log(`${goal.label} pressed`);
               }
             }}
@@ -195,4 +209,3 @@ const styles = {
 };
 
 export default ProgressTab;
-
